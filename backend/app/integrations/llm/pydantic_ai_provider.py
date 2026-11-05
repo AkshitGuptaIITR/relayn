@@ -1,6 +1,7 @@
 import logging
-import os
 from pydantic_ai import Agent
+from pydantic_ai.models.google import GoogleModel
+from pydantic_ai.providers.google import GoogleProvider
 from app.core.config import settings
 from app.integrations.llm.fixtures import DeterministicFixtureProvider
 from app.schemas.extraction import EmailExtractionResult
@@ -38,11 +39,15 @@ class PydanticAIExtractionProvider:
         self.fallback = DeterministicFixtureProvider()
 
         if self.api_key:
-            os.environ["GEMINI_API_KEY"] = self.api_key
-            # Use gemini-2.5-flash or configured model
-            target_model = model_name or "google:gemini-2.5-flash"
-            self.agent = Agent(
+            # Pass the key explicitly so no process-wide environment state is mutated.
+            target_model = model_name or "gemini-2.5-flash"
+            target_model = target_model.removeprefix("google:")
+            model = GoogleModel(
                 target_model,
+                provider=GoogleProvider(api_key=self.api_key),
+            )
+            self.agent = Agent(
+                model,
                 output_type=EmailExtractionResult,
                 system_prompt=EXTRACTION_SYSTEM_PROMPT,
                 retries=2,
@@ -71,7 +76,7 @@ Email Body:
 """
         try:
             result = await self.agent.run(user_content)
-            return result.data
+            return result.output
         except Exception as e:
             logger.warning("Pydantic AI extraction error: %s; safely falling back to fixtures.", e)
             return await self.fallback.extract_email(sender, recipients, subject, body_plain)

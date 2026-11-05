@@ -19,10 +19,12 @@ async def test_google_oauth_pkce_and_state_generation():
         from app.models.auth import OAuthSessionState
         import datetime
 
-        # Insert test state
+        # Insert test state with unique token per test run
+        import uuid
         now = datetime.datetime.now(datetime.timezone.utc)
+        unique_state = f"valid_state_{uuid.uuid4().hex[:8]}"
         record = OAuthSessionState(
-            state_token="valid_state_123",
+            state_token=unique_state,
             code_verifier="test_verifier_456",
             expires_at=now + datetime.timedelta(minutes=10),
             is_used=False,
@@ -31,9 +33,9 @@ async def test_google_oauth_pkce_and_state_generation():
         await session.commit()
 
         # 1. First consumption succeeds
-        verifier = await oauth_service.verify_and_consume_state("valid_state_123")
+        verifier = await oauth_service.verify_and_consume_state(unique_state)
         assert verifier == "test_verifier_456"
 
         # 2. Replay attack: second consumption with same state MUST fail
         with pytest.raises(ValueError, match="Invalid, expired, or already used"):
-            await oauth_service.verify_and_consume_state("valid_state_123")
+            await oauth_service.verify_and_consume_state(unique_state)
