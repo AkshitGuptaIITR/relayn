@@ -35,6 +35,19 @@ EventType = Literal[
 ]
 
 
+# Software engineering interview round categories
+InterviewRoundCategory = Literal[
+    "recruiter_screen",
+    "technical_screen",
+    "coding_dsa",
+    "system_design",
+    "take_home_review",
+    "hiring_manager",
+    "behavioral",
+    "onsite_loop",
+]
+
+
 class ExtractedContact(BaseModel):
     """Recruiter, hiring manager, or referral contact extracted from email."""
 
@@ -45,10 +58,29 @@ class ExtractedContact(BaseModel):
 
 
 class ExtractedMilestone(BaseModel):
-    """Interview date, technical assessment deadline, or offer response deadline."""
+    """Interview round, technical assessment deadline, or offer response deadline."""
 
     title: str = Field(..., description="Title of the milestone (e.g. System Design Interview)")
     milestone_type: Literal["interview", "technical_assessment", "deadline", "offer_response"]
+    
+    # Software Engineering interview round specific fields
+    round_category: InterviewRoundCategory | None = Field(
+        default=None,
+        description="Software engineering interview round category",
+    )
+    round_number: int | None = Field(
+        default=None,
+        description="Round sequence number (e.g. 1 for phone screen, 2 for technical screen)",
+    )
+    meeting_url: str | None = Field(
+        default=None,
+        description="Google Meet, Zoom, Teams, or Chime meeting link if present",
+    )
+    prep_notes: str | None = Field(
+        default=None,
+        description="Specific preparation advice or expectations mentioned in the email",
+    )
+
     scheduled_at: datetime.datetime | None = Field(
         default=None,
         description="Exact ISO timestamp if date and time are both known",

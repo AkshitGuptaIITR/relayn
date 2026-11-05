@@ -176,12 +176,16 @@ class CareerPipelineService:
             )
             session.add(event)
 
-            # 6. Create Milestones
+            # 6. Create Milestones & SWE Interview Rounds
             for m_data in extracted.milestones:
                 milestone = Milestone(
                     opportunity_id=opportunity.id,
                     title=m_data.title,
                     milestone_type=m_data.milestone_type,
+                    round_category=m_data.round_category,
+                    round_number=m_data.round_number,
+                    meeting_url=m_data.meeting_url,
+                    prep_notes=m_data.prep_notes,
                     scheduled_at=m_data.scheduled_at,
                     scheduled_date=m_data.scheduled_date,
                     is_time_uncertain=m_data.is_time_uncertain,

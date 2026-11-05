@@ -1,9 +1,15 @@
+import { useState } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AuthProvider } from './app/auth-context'
 import { LoginPage } from './features/auth/login-page'
 import { AppLayout } from './app/app-layout'
 import { ProtectedRoute } from './app/protected-route'
+import { SyncControlPanel } from './features/sync/sync-control-panel'
+import { OpportunityList } from './features/opportunities/opportunity-list'
+import { OpportunityDetailView } from './features/opportunities/opportunity-detail'
+import { ReviewQueuePage } from './features/review/review-queue-page'
+import { FollowUpsPage } from './features/followups/follow-ups-page'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -14,45 +20,32 @@ const queryClient = new QueryClient({
   },
 })
 
-// Placeholder Views for the next feature phases
-import { SyncControlPanel } from './features/sync/sync-control-panel'
-
 function OpportunitiesPage() {
+  const [selectedOppId, setSelectedOppId] = useState<string | null>(null)
+
+  if (selectedOppId) {
+    return (
+      <OpportunityDetailView
+        opportunityId={selectedOppId}
+        onBack={() => setSelectedOppId(null)}
+      />
+    )
+  }
+
   return (
     <div className="space-y-6">
       <SyncControlPanel />
 
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold text-white">Opportunities Pipeline</h2>
+        <div>
+          <h2 className="text-xl font-bold text-white tracking-tight">Software Engineering Pipeline</h2>
+          <p className="text-xs text-slate-400 mt-0.5">
+            Active applications, recruiter leads, take-homes, and interview rounds
+          </p>
+        </div>
       </div>
-      <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-8 text-center text-slate-400">
-        <p className="text-sm">No applications or recruiter leads tracked yet.</p>
-        <p className="text-xs text-slate-500 mt-1">
-          Click "Sync Mailbox Now" above to ingest career emails from the fixture gateway.
-        </p>
-      </div>
-    </div>
-  )
-}
 
-function ReviewQueuePage() {
-  return (
-    <div className="space-y-4">
-      <h2 className="text-xl font-bold text-white">Review Queue</h2>
-      <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-8 text-center text-slate-400">
-        <p className="text-sm">No pending proposals awaiting review.</p>
-      </div>
-    </div>
-  )
-}
-
-function FollowUpsPage() {
-  return (
-    <div className="space-y-4">
-      <h2 className="text-xl font-bold text-white">Follow-up Tasks</h2>
-      <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-8 text-center text-slate-400">
-        <p className="text-sm">No pending follow-ups or upcoming deadlines.</p>
-      </div>
+      <OpportunityList onSelectOpportunity={(id) => setSelectedOppId(id)} />
     </div>
   )
 }

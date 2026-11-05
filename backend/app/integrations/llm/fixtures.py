@@ -126,11 +126,28 @@ class DeterministicFixtureProvider:
             event_type = "interview_scheduled" if "interview" in sub_lower else "screening_invitation"
 
             milestones = []
+            meeting_match = re.search(r"(https?://meet\.google\.com/[a-z-]+|https?://[a-z0-9.-]*zoom\.us/j/[0-9]+)", body_plain)
+            meeting_url = meeting_match.group(1) if meeting_match else None
+
+            round_category = "system_design" if "architecture" in body_lower or "design" in body_lower else "technical_screen"
+            if "screen" in sub_lower or "connect" in sub_lower:
+                round_category = "recruiter_screen"
+
+            prep_notes = None
+            if "prepare" in body_lower:
+                prep_match = re.search(r"Please prepare (.*?\.)", body_plain, re.IGNORECASE)
+                if prep_match:
+                    prep_notes = prep_match.group(1).strip()
+
             if "friday" in body_lower or "thursday" in body_lower:
                 milestones.append(
                     ExtractedMilestone(
-                        title=f"Interview with {company}",
+                        title=f"{company} {round_category.replace('_', ' ').title()}",
                         milestone_type="interview",
+                        round_category=round_category,
+                        round_number=2 if round_category != "recruiter_screen" else 1,
+                        meeting_url=meeting_url,
+                        prep_notes=prep_notes,
                         scheduled_date=datetime.date.today() + datetime.timedelta(days=3),
                         is_time_uncertain=False,
                     )

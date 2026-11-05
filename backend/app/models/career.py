@@ -192,6 +192,12 @@ class Milestone(Base, TimestampMixin):
         nullable=False,
     )  # interview, technical_assessment, deadline, offer_response
     
+    # Software engineering interview round details
+    round_category: Mapped[str | None] = mapped_column(String(64), nullable=True)  # recruiter_screen, coding_dsa, system_design, hiring_manager, behavioral, onsite_loop
+    round_number: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    meeting_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    prep_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+
     # Timezone-aware timestamp OR date-only if time is not specified
     scheduled_at: Mapped[datetime.datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     scheduled_date: Mapped[datetime.date | None] = mapped_column(Date, nullable=True)
