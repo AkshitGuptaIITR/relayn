@@ -58,12 +58,13 @@ Implement one structured extraction call first where feasible, keeping classific
 | U02 | Build review and follow-up pages with pending count, evidence, conflict handling, and accept/edit/dismiss/complete actions. | F05, D03, I02 | Browser workflow resolves a proposal and task; reload/reprocessing preserves those decisions. |
 | U03 | Build basic contacts and overview views plus Settings for timezone, consent, integration status, sync, jobs, and lifecycle confirmations. | J03, I03, U01, U02, A02 | A connected or demo owner can understand progress, configure non-secret preferences, and see errors without implementation traces or secrets. |
 
-### Phase 5: Real Gmail synchronization and lifecycle control
+### Phase 5: Real Gmail synchronization, Pydantic AI integration, and lifecycle control
 
 | ID | Task and deliverables | Dependencies | Exit check |
 | --- | --- | --- | --- |
+| P01 | Integrate Pydantic AI (`pydantic-ai`) as the unified agentic extraction layer with typed `result_type=EmailExtractionResult`, self-healing validation retries, multi-model support, and offline fixture fallback. | A01, A02 | Extraction results are strictly typed with self-healing validation; model switches cleanly between providers (Gemini/OpenAI/Ollama) with deterministic fallback. |
 | G02 | Implement Google web-client connect/callback, one-time session-bound state/PKCE, scope validation, mailbox identity, encrypted refresh credentials, and reconnect setup. | F04, F03 | Fake-Google tests reject forged, expired, replayed, or wrong-session state; a different retained mailbox cannot silently replace the current one. |
-| G03 | Add the real Gmail gateway to the shared initial/incremental handlers and complete starting history boundary, all-page persistence, known-thread updates, safe cursor advancement, cursor-expiry recovery, and token refresh. | G01, G02, J02, A02 | Failure-injection tests cover arrivals during import, page restart, revoked credentials, expired history, deleted sources, duplicate polling, and AI failure after successful retrieval. |
+| G03 | Add the real Gmail gateway to the shared initial/incremental handlers and complete starting history boundary, all-page persistence, known-thread updates, safe cursor advancement, cursor-expiry recovery, and token refresh. | G01, G02, J02, P01 | Failure-injection tests cover arrivals during import, page restart, revoked credentials, expired history, deleted sources, duplicate polling, and AI failure after successful retrieval. |
 | O01 | Implement fenced disconnect/purge controls, generation checks in all mailbox commits, restartable cleanup, token removal/revocation outcome, and explicit reimport authorization. | J01, D03, G02 | Start an extraction, purge, let the result return, and restart: no deleted record returns. Disconnect preserves records; auth/settings survive purge. |
 | O02 | Implement diagnostic retention, heartbeat cleanup, structured safe logs, readiness/schema checks, and operator-facing blocked/failed recovery messages. | J03, O01 | Old diagnostics expire without deleting domain provenance; stopped worker is visible; errors/logs expose no secrets or full email content. |
 

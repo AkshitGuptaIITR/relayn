@@ -17,7 +17,7 @@ The requirements define product behavior. This document defines how to build it.
 | Queue and scheduler | PostgreSQL-backed jobs; scheduling inside one Python worker | Persist work without requiring Redis, Celery, or a separate scheduler. |
 | Authentication | One environment-configured password, encrypted stateless cookie | No app accounts, users table, tenant filters, registration, or hosted auth. |
 | Google integration | One Gmail mailbox; authorization-code flow and read-only scope | OAuth grants mailbox access independently of local login. |
-| AI | Provider adapter, initially Gemini plus deterministic fixtures | Structured extraction and controlled decisions; no autonomous general-purpose tool runner. |
+| AI | Provider adapter backed by Pydantic AI (Gemini, OpenAI, Anthropic, Ollama) plus deterministic fixtures | Structured extraction, self-healing validation retry loops, and controlled decisions; no autonomous general-purpose tool runner. |
 | Distribution | Build Vite assets into the app image; FastAPI serves assets and `/api` | One browser origin and no separate frontend runtime in the packaged installation. |
 | Dependencies | `uv` and `pnpm`, committed lockfiles and pinned container/interpreter versions | Reproducible builds. Select supported stable versions during scaffolding rather than unpinned `latest` images. |
 
