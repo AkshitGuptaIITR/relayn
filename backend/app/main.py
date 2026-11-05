@@ -3,6 +3,7 @@ from fastapi.responses import JSONResponse
 from app.api.auth import router as auth_router
 from app.api.career import router as career_router
 from app.api.google_oauth import router as google_oauth_router
+from app.api.settings import router as settings_router
 from app.api.sync import router as sync_router
 
 
@@ -20,6 +21,7 @@ def create_app() -> FastAPI:
     app.include_router(auth_router)
     app.include_router(career_router)
     app.include_router(google_oauth_router)
+    app.include_router(settings_router)
     app.include_router(sync_router)
 
     @app.get("/api/health")

@@ -10,6 +10,7 @@ import { OpportunityList } from './features/opportunities/opportunity-list'
 import { OpportunityDetailView } from './features/opportunities/opportunity-detail'
 import { ReviewQueuePage } from './features/review/review-queue-page'
 import { FollowUpsPage } from './features/followups/follow-ups-page'
+import { SettingsPage } from './features/settings/settings-page'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -56,22 +57,6 @@ function ContactsPage() {
       <h2 className="text-xl font-bold text-white">Recruiters & Contacts</h2>
       <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-8 text-center text-slate-400">
         <p className="text-sm">No recruiter contacts discovered yet.</p>
-      </div>
-    </div>
-  )
-}
-
-function SettingsPage() {
-  return (
-    <div className="space-y-4">
-      <h2 className="text-xl font-bold text-white">Settings & Integration</h2>
-      <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-6 space-y-4 max-w-xl">
-        <div>
-          <h3 className="text-sm font-semibold text-slate-200">Gmail Connection</h3>
-          <p className="text-xs text-slate-400 mt-0.5">
-            Connect your mailbox via read-only OAuth or enable Synthetic Demo mode.
-          </p>
-        </div>
       </div>
     </div>
   )

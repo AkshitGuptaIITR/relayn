@@ -6,6 +6,14 @@ from app.main import app
 
 @pytest.mark.asyncio
 async def test_auth_flow_endpoints():
+    from app.db.session import async_session_factory
+    from app.models.auth import AuthAttempt
+
+    # Clear rate-limiting records before test
+    async with async_session_factory() as session:
+        await session.execute(AuthAttempt.__table__.delete())
+        await session.commit()
+
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         # 1. Check unauthenticated me

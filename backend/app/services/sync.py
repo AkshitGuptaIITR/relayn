@@ -1,8 +1,10 @@
 import logging
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from app.auth.google_oauth import GoogleOAuthService
 from app.db.session import async_session_factory
 from app.integrations.mailbox.gateway import SyncResult
+from app.integrations.mailbox.gmail import GmailGateway
 from app.integrations.mailbox.synthetic import SyntheticMailboxGateway
 from app.jobs.repository import JobRepository
 from app.models.auth import InstallationState
@@ -14,14 +16,27 @@ logger = logging.getLogger("relayn.sync")
 class MailboxSyncService:
     """
     Orchestrates mailbox synchronization:
-    1. Fetches new messages from the configured gateway (Synthetic or real Gmail).
-    2. Persists newly discovered messages into email_messages (deduplicated by gmail_message_id).
-    3. Enqueues a process_email job for each new message.
-    4. Advances last_history_id and updates sync_status.
+    1. Selects either real GmailGateway (if connected with tokens) or SyntheticMailboxGateway.
+    2. Fetches new messages from the gateway.
+    3. Persists newly discovered messages into email_messages (deduplicated by gmail_message_id).
+    4. Enqueues a process_email job for each new message.
+    5. Advances last_history_id and updates sync_status.
     """
 
     def __init__(self, gateway=None):
-        self.gateway = gateway or SyntheticMailboxGateway()
+        self._custom_gateway = gateway
+
+    async def _resolve_gateway(self, mailbox: MailboxAccount, session: AsyncSession):
+        if self._custom_gateway:
+            return self._custom_gateway
+
+        # If real encrypted Google OAuth credentials exist, use GmailGateway
+        if mailbox.encrypted_credentials:
+            oauth_service = GoogleOAuthService(session)
+            return GmailGateway(mailbox.encrypted_credentials, oauth_service)
+
+        # Fallback to offline synthetic fixture gateway
+        return SyntheticMailboxGateway()
 
     async def sync_mailbox(self, trigger: str = "manual") -> int:
         async with async_session_factory() as session:
@@ -45,9 +60,12 @@ class MailboxSyncService:
             last_history = mailbox.last_history_id
             generation = mailbox.generation
 
+            # Resolve gateway dynamically based on connection status
+            gateway = await self._resolve_gateway(mailbox, session)
+
         try:
-            # 2. Fetch messages from gateway
-            sync_result: SyncResult = await self.gateway.fetch_messages(after_history_id=last_history)
+            # 2. Fetch messages from resolved gateway
+            sync_result: SyncResult = await gateway.fetch_messages(after_history_id=last_history)
             new_messages_count = 0
 
             async with async_session_factory() as session:
