@@ -1,0 +1,379 @@
+[
+  {
+    "gmail_message_id": "msg_stripe_01",
+    "gmail_thread_id": "thread_stripe_01",
+    "history_id": "1001",
+    "sender": "jobs@stripe.com",
+    "recipients": [
+      "owner@relayn.local"
+    ],
+    "subject": "Thank you for applying to Stripe - Staff Backend Engineer",
+    "sent_at": "2026-10-06T13:50:48.453944+00:00",
+    "snippet": "Thanks for your interest in Stripe! We received your application for Staff Backend Engineer...",
+    "body_plain": "Hi Akshit,\n\nThank you for applying for the Staff Backend Engineer role at Stripe. We have received your application and our team is currently reviewing your profile.\n\nYou can view the status of your application on our career portal.\n\nBest regards,\nThe Stripe Recruiting Team"
+  },
+  {
+    "gmail_message_id": "msg_stripe_02",
+    "gmail_thread_id": "thread_stripe_01",
+    "history_id": "1002",
+    "sender": "sarah.connor@stripe.com",
+    "recipients": [
+      "owner@relayn.local"
+    ],
+    "subject": "Stripe: Staff Backend Engineer - Let's connect!",
+    "sent_at": "2026-10-11T13:50:48.453944+00:00",
+    "snippet": "Hi Akshit, I'm Sarah from the technical recruiting team at Stripe. Your profile caught our eye...",
+    "body_plain": "Hi Akshit,\n\nI lead backend hiring at Stripe. We were very impressed with your background in distributed systems and would love to chat for 30 minutes to discuss the Staff Backend Engineer position.\n\nCould you let me know if you are free this Thursday at 2:00 PM EST or Friday at 11:00 AM EST?\n\nLooking forward to speaking!\n\nSarah Connor\nTechnical Recruiter | Stripe"
+  },
+  {
+    "gmail_message_id": "msg_stripe_03",
+    "gmail_thread_id": "thread_stripe_01",
+    "history_id": "1003",
+    "sender": "sarah.connor@stripe.com",
+    "recipients": [
+      "owner@relayn.local"
+    ],
+    "subject": "Stripe Next Steps: Technical Assessment Invitation",
+    "sent_at": "2026-10-18T13:50:48.453944+00:00",
+    "snippet": "Great chatting with you! As discussed, the next step is our hands-on systems assessment...",
+    "body_plain": "Hi Akshit,\n\nIt was great speaking with you earlier! The team wants to move forward to the technical assessment phase. Here is the link to complete our 90-minute systems design evaluation:\n\nhttps://assessment.stripe.com/take/xyz890\n\nPlease complete this assessment by next Tuesday, 5:00 PM EST.\n\nBest of luck!\nSarah Connor"
+  },
+  {
+    "gmail_message_id": "msg_stripe_04",
+    "gmail_thread_id": "thread_stripe_01",
+    "history_id": "1004",
+    "sender": "sarah.connor@stripe.com",
+    "recipients": [
+      "owner@relayn.local"
+    ],
+    "subject": "Congratulations! Offer from Stripe",
+    "sent_at": "2026-10-31T13:50:48.453944+00:00",
+    "snippet": "We are thrilled to extend an offer for the Staff Backend Engineer position at Stripe!",
+    "body_plain": "Dear Akshit,\n\nOn behalf of everyone at Stripe, we are thrilled to formally extend an offer of employment for the position of Staff Backend Engineer in Seattle/Remote!\n\nBase Salary: $235,000\nEquity: $400,000 RSU over 4 years\nSign-on Bonus: $30,000\n\nPlease review the attached offer letter and let us know your decision by next Monday.\n\nWarm regards,\nSarah Connor"
+  },
+  {
+    "gmail_message_id": "msg_datadog_01",
+    "gmail_thread_id": "thread_datadog_01",
+    "history_id": "1005",
+    "sender": "no-reply@datadoghq.com",
+    "recipients": [
+      "owner@relayn.local"
+    ],
+    "subject": "Application Received: Senior Platform Engineer at Datadog",
+    "sent_at": "2026-10-22T13:50:48.453944+00:00",
+    "snippet": "Thank you for applying to the Senior Platform Engineer position at Datadog...",
+    "body_plain": "Hello Akshit,\n\nThank you for your application to Datadog for the Senior Platform Engineer role. We are reviewing your background and will reach out if there is a match.\n\nDatadog Talent Acquisition"
+  },
+  {
+    "gmail_message_id": "msg_datadog_02",
+    "gmail_thread_id": "thread_datadog_01",
+    "history_id": "1006",
+    "sender": "alex.chen@datadoghq.com",
+    "recipients": [
+      "owner@relayn.local"
+    ],
+    "subject": "Datadog Interview Confirmation: Technical Architecture Round",
+    "sent_at": "2026-11-02T13:50:48.453944+00:00",
+    "snippet": "Your upcoming interview with Datadog is scheduled for Friday at 3:00 PM...",
+    "body_plain": "Hi Akshit,\n\nYour next interview round with our Engineering Director Alex Chen is confirmed:\n\nDate: This Friday\nTime: 3:00 PM - 4:00 PM EST\nVideo link: https://meet.google.com/abc-defg-hij\nTopic: Distributed Systems & Architecture Deep Dive\n\nPlease prepare a 10-minute overview of a recent project you led.\n\nBest,\nAlex Chen\nEngineering Director, Datadog"
+  },
+  {
+    "gmail_message_id": "msg_google_01",
+    "gmail_thread_id": "thread_google_01",
+    "history_id": "1007",
+    "sender": "m.jordan@google.com",
+    "recipients": [
+      "owner@relayn.local"
+    ],
+    "subject": "Exciting Engineering Opportunities at Google Cloud",
+    "sent_at": "2026-10-29T13:50:48.453944+00:00",
+    "snippet": "I came across your GitHub and open source work and wanted to connect regarding Staff roles at Google...",
+    "body_plain": "Hi Akshit,\n\nI hope you're having a great week! My name is Michael Jordan and I'm a Senior Recruiter on the Google Cloud Infrastructure team.\n\nI was really impressed by your background in asynchronous queue processing and scalability. We are actively hiring Staff Software Engineers for our Cloud Storage team in Mountain View and New York.\n\nAre you open to exploring new roles? If so, I'd love to share more details over a quick call.\n\nBest,\nMichael Jordan\nGoogle Cloud Talent Team"
+  },
+  {
+    "gmail_message_id": "msg_meta_01",
+    "gmail_thread_id": "thread_meta_01",
+    "history_id": "1008",
+    "sender": "careers@meta.com",
+    "recipients": [
+      "owner@relayn.local"
+    ],
+    "subject": "Your application to Meta - Production Engineer",
+    "sent_at": "2026-10-08T13:50:48.453944+00:00",
+    "snippet": "Thank you for applying to Meta for the Production Engineer opening...",
+    "body_plain": "Thank you for your interest in Meta. We have received your application for Production Engineer.\n\nMeta Recruiting"
+  },
+  {
+    "gmail_message_id": "msg_meta_02",
+    "gmail_thread_id": "thread_meta_01",
+    "history_id": "1009",
+    "sender": "careers@meta.com",
+    "recipients": [
+      "owner@relayn.local"
+    ],
+    "subject": "Update regarding your application with Meta",
+    "sent_at": "2026-10-24T13:50:48.453944+00:00",
+    "snippet": "Thank you for taking the time to speak with our team. At this time we have decided to pursue other candidates...",
+    "body_plain": "Hi Akshit,\n\nThank you for giving us the opportunity to consider your background for the Production Engineer position at Meta.\n\nAfter careful consideration, we have decided to move forward with other candidates whose experience more closely matches the immediate requirements of this role.\n\nWe encourage you to apply for other roles in the future.\n\nSincerely,\nMeta Recruiting Team"
+  },
+  {
+    "gmail_message_id": "msg_anthropic_01",
+    "gmail_thread_id": "thread_anthropic_01",
+    "history_id": "1010",
+    "sender": "hiring@anthropic.com",
+    "recipients": [
+      "owner@relayn.local"
+    ],
+    "subject": "Anthropic AI Systems: Practical Engineering Assessment",
+    "sent_at": "2026-11-01T13:50:48.453944+00:00",
+    "snippet": "Thank you for your application to Anthropic. Please find your practical assessment link below...",
+    "body_plain": "Hello Akshit,\n\nThank you for applying to the Systems Engineer role at Anthropic.\n\nAs the next step, please complete the practical coding assignment found here:\nhttps://github.com/anthropic-evals/challenge-systems-7782\n\nPlease submit your solution via a private GitHub repository before Sunday at 11:59 PM UTC.\n\nBest,\nAnthropic Talent Team"
+  },
+  {
+    "gmail_message_id": "msg_spam_01",
+    "gmail_thread_id": "thread_spam_01",
+    "history_id": "1011",
+    "sender": "newsletter@medium.com",
+    "recipients": [
+      "owner@relayn.local"
+    ],
+    "subject": "Top 10 Python libraries you should know in 2026",
+    "sent_at": "2026-11-03T13:50:48.453944+00:00",
+    "snippet": "Explore the trending Python open-source tools this week...",
+    "body_plain": "Hi reader,\nHere are the top stories on programming and machine learning today..."
+  },
+  {
+    "gmail_message_id": "msg_spam_02",
+    "gmail_thread_id": "thread_spam_02",
+    "history_id": "1012",
+    "sender": "auto-confirm@amazon.com",
+    "recipients": [
+      "owner@relayn.local"
+    ],
+    "subject": "Your Amazon.com order #112-9847123 has shipped",
+    "sent_at": "2026-11-04T13:50:48.453944+00:00",
+    "snippet": "Your package is on its way. Track your package at amazon.com...",
+    "body_plain": "Hello,\nYour package with Ergonomic Mechanical Keyboard will arrive tomorrow by 8:00 PM."
+  },
+  {
+    "gmail_message_id": "msg_synth_app_00",
+    "gmail_thread_id": "thread_synth_00",
+    "history_id": "1013",
+    "sender": "recruiter.eva@snowflake.com",
+    "recipients": [
+      "owner@relayn.local"
+    ],
+    "subject": "Application Received: Staff Distributed Systems Engineer at Snowflake",
+    "sent_at": "2026-10-16T13:50:48.453944+00:00",
+    "snippet": "Thank you for applying to Snowflake for the position of Staff Distributed Systems Engineer...",
+    "body_plain": "Hello Akshit,\n\nThank you for applying for Staff Distributed Systems Engineer at Snowflake. We have received your materials and will review them shortly.\n\nBest,\nSnowflake Recruiting"
+  },
+  {
+    "gmail_message_id": "msg_synth_followup_00",
+    "gmail_thread_id": "thread_synth_00",
+    "history_id": "1014",
+    "sender": "recruiter.eva@snowflake.com",
+    "recipients": [
+      "owner@relayn.local"
+    ],
+    "subject": "Next steps with Snowflake (Staff Distributed Systems Engineer)",
+    "sent_at": "2026-10-21T13:50:48.453944+00:00",
+    "snippet": "Hi Akshit, Eva Green here from Snowflake. We'd love to schedule a quick call...",
+    "body_plain": "Hi Akshit,\n\nI reviewed your resume for the Staff Distributed Systems Engineer role and would love to chat. Could you share your availability for early next week?\n\nThanks,\nEva Green"
+  },
+  {
+    "gmail_message_id": "msg_synth_app_01",
+    "gmail_thread_id": "thread_synth_01",
+    "history_id": "1015",
+    "sender": "talent@openai.com",
+    "recipients": [
+      "owner@relayn.local"
+    ],
+    "subject": "Application Received: Inference Infrastructure Engineer at OpenAI",
+    "sent_at": "2026-10-17T13:50:48.453944+00:00",
+    "snippet": "Thank you for applying to OpenAI for the position of Inference Infrastructure Engineer...",
+    "body_plain": "Hello Akshit,\n\nThank you for applying for Inference Infrastructure Engineer at OpenAI. We have received your materials and will review them shortly.\n\nBest,\nOpenAI Recruiting"
+  },
+  {
+    "gmail_message_id": "msg_synth_app_02",
+    "gmail_thread_id": "thread_synth_02",
+    "history_id": "1016",
+    "sender": "hiring@uber.com",
+    "recipients": [
+      "owner@relayn.local"
+    ],
+    "subject": "Application Received: Senior Backend Engineer - Core Services at Uber",
+    "sent_at": "2026-10-18T13:50:48.453944+00:00",
+    "snippet": "Thank you for applying to Uber for the position of Senior Backend Engineer - Core Services...",
+    "body_plain": "Hello Akshit,\n\nThank you for applying for Senior Backend Engineer - Core Services at Uber. We have received your materials and will review them shortly.\n\nBest,\nUber Recruiting"
+  },
+  {
+    "gmail_message_id": "msg_synth_followup_02",
+    "gmail_thread_id": "thread_synth_02",
+    "history_id": "1017",
+    "sender": "hiring@uber.com",
+    "recipients": [
+      "owner@relayn.local"
+    ],
+    "subject": "Next steps with Uber (Senior Backend Engineer - Core Services)",
+    "sent_at": "2026-10-23T13:50:48.453944+00:00",
+    "snippet": "Hi Akshit, Uber Careers here from Uber. We'd love to schedule a quick call...",
+    "body_plain": "Hi Akshit,\n\nI reviewed your resume for the Senior Backend Engineer - Core Services role and would love to chat. Could you share your availability for early next week?\n\nThanks,\nUber Careers"
+  },
+  {
+    "gmail_message_id": "msg_synth_app_03",
+    "gmail_thread_id": "thread_synth_03",
+    "history_id": "1018",
+    "sender": "dan.m@airbnb.com",
+    "recipients": [
+      "owner@relayn.local"
+    ],
+    "subject": "Application Received: Staff Fullstack Engineer at Airbnb",
+    "sent_at": "2026-10-19T13:50:48.453944+00:00",
+    "snippet": "Thank you for applying to Airbnb for the position of Staff Fullstack Engineer...",
+    "body_plain": "Hello Akshit,\n\nThank you for applying for Staff Fullstack Engineer at Airbnb. We have received your materials and will review them shortly.\n\nBest,\nAirbnb Recruiting"
+  },
+  {
+    "gmail_message_id": "msg_synth_rej_03",
+    "gmail_thread_id": "thread_synth_03",
+    "history_id": "1019",
+    "sender": "dan.m@airbnb.com",
+    "recipients": [
+      "owner@relayn.local"
+    ],
+    "subject": "Update on your application with Airbnb",
+    "sent_at": "2026-10-29T13:50:48.453944+00:00",
+    "snippet": "Thank you for considering Airbnb. Unfortunately we will not be moving forward...",
+    "body_plain": "Dear Akshit,\n\nThank you for taking the time to explore opportunities with Airbnb. At this time, we have chosen to move forward with other candidates.\n\nBest regards,\nAirbnb Talent Team"
+  },
+  {
+    "gmail_message_id": "msg_synth_app_04",
+    "gmail_thread_id": "thread_synth_04",
+    "history_id": "1020",
+    "sender": "karri@linear.app",
+    "recipients": [
+      "owner@relayn.local"
+    ],
+    "subject": "Application Received: Founding Backend Engineer at Linear",
+    "sent_at": "2026-10-20T13:50:48.453944+00:00",
+    "snippet": "Thank you for applying to Linear for the position of Founding Backend Engineer...",
+    "body_plain": "Hello Akshit,\n\nThank you for applying for Founding Backend Engineer at Linear. We have received your materials and will review them shortly.\n\nBest,\nLinear Recruiting"
+  },
+  {
+    "gmail_message_id": "msg_synth_followup_04",
+    "gmail_thread_id": "thread_synth_04",
+    "history_id": "1021",
+    "sender": "karri@linear.app",
+    "recipients": [
+      "owner@relayn.local"
+    ],
+    "subject": "Next steps with Linear (Founding Backend Engineer)",
+    "sent_at": "2026-10-25T13:50:48.453944+00:00",
+    "snippet": "Hi Akshit, Karri Saarinen here from Linear. We'd love to schedule a quick call...",
+    "body_plain": "Hi Akshit,\n\nI reviewed your resume for the Founding Backend Engineer role and would love to chat. Could you share your availability for early next week?\n\nThanks,\nKarri Saarinen"
+  },
+  {
+    "gmail_message_id": "msg_synth_app_05",
+    "gmail_thread_id": "thread_synth_05",
+    "history_id": "1022",
+    "sender": "recruiting@figma.com",
+    "recipients": [
+      "owner@relayn.local"
+    ],
+    "subject": "Application Received: Systems Reliability Engineer at Figma",
+    "sent_at": "2026-10-21T13:50:48.453944+00:00",
+    "snippet": "Thank you for applying to Figma for the position of Systems Reliability Engineer...",
+    "body_plain": "Hello Akshit,\n\nThank you for applying for Systems Reliability Engineer at Figma. We have received your materials and will review them shortly.\n\nBest,\nFigma Recruiting"
+  },
+  {
+    "gmail_message_id": "msg_synth_app_06",
+    "gmail_thread_id": "thread_synth_06",
+    "history_id": "1023",
+    "sender": "lee@vercel.com",
+    "recipients": [
+      "owner@relayn.local"
+    ],
+    "subject": "Application Received: Edge Runtime Engineer at Vercel",
+    "sent_at": "2026-10-22T13:50:48.453944+00:00",
+    "snippet": "Thank you for applying to Vercel for the position of Edge Runtime Engineer...",
+    "body_plain": "Hello Akshit,\n\nThank you for applying for Edge Runtime Engineer at Vercel. We have received your materials and will review them shortly.\n\nBest,\nVercel Recruiting"
+  },
+  {
+    "gmail_message_id": "msg_synth_followup_06",
+    "gmail_thread_id": "thread_synth_06",
+    "history_id": "1024",
+    "sender": "lee@vercel.com",
+    "recipients": [
+      "owner@relayn.local"
+    ],
+    "subject": "Next steps with Vercel (Edge Runtime Engineer)",
+    "sent_at": "2026-10-27T13:50:48.453944+00:00",
+    "snippet": "Hi Akshit, Lee Robinson here from Vercel. We'd love to schedule a quick call...",
+    "body_plain": "Hi Akshit,\n\nI reviewed your resume for the Edge Runtime Engineer role and would love to chat. Could you share your availability for early next week?\n\nThanks,\nLee Robinson"
+  },
+  {
+    "gmail_message_id": "msg_synth_app_07",
+    "gmail_thread_id": "thread_synth_07",
+    "history_id": "1025",
+    "sender": "jobs@makenotion.com",
+    "recipients": [
+      "owner@relayn.local"
+    ],
+    "subject": "Application Received: Infrastructure Engineer at Notion",
+    "sent_at": "2026-10-23T13:50:48.453944+00:00",
+    "snippet": "Thank you for applying to Notion for the position of Infrastructure Engineer...",
+    "body_plain": "Hello Akshit,\n\nThank you for applying for Infrastructure Engineer at Notion. We have received your materials and will review them shortly.\n\nBest,\nNotion Recruiting"
+  },
+  {
+    "gmail_message_id": "msg_synth_app_08",
+    "gmail_thread_id": "thread_synth_08",
+    "history_id": "1026",
+    "sender": "brian@coinbase.com",
+    "recipients": [
+      "owner@relayn.local"
+    ],
+    "subject": "Application Received: Crypto Backend Engineer at Coinbase",
+    "sent_at": "2026-10-24T13:50:48.453944+00:00",
+    "snippet": "Thank you for applying to Coinbase for the position of Crypto Backend Engineer...",
+    "body_plain": "Hello Akshit,\n\nThank you for applying for Crypto Backend Engineer at Coinbase. We have received your materials and will review them shortly.\n\nBest,\nCoinbase Recruiting"
+  },
+  {
+    "gmail_message_id": "msg_synth_followup_08",
+    "gmail_thread_id": "thread_synth_08",
+    "history_id": "1027",
+    "sender": "brian@coinbase.com",
+    "recipients": [
+      "owner@relayn.local"
+    ],
+    "subject": "Next steps with Coinbase (Crypto Backend Engineer)",
+    "sent_at": "2026-10-29T13:50:48.453944+00:00",
+    "snippet": "Hi Akshit, Brian K here from Coinbase. We'd love to schedule a quick call...",
+    "body_plain": "Hi Akshit,\n\nI reviewed your resume for the Crypto Backend Engineer role and would love to chat. Could you share your availability for early next week?\n\nThanks,\nBrian K"
+  },
+  {
+    "gmail_message_id": "msg_synth_app_09",
+    "gmail_thread_id": "thread_synth_09",
+    "history_id": "1028",
+    "sender": "jobs@cloudflare.com",
+    "recipients": [
+      "owner@relayn.local"
+    ],
+    "subject": "Application Received: Workers Runtime Engineer at Cloudflare",
+    "sent_at": "2026-10-25T13:50:48.453944+00:00",
+    "snippet": "Thank you for applying to Cloudflare for the position of Workers Runtime Engineer...",
+    "body_plain": "Hello Akshit,\n\nThank you for applying for Workers Runtime Engineer at Cloudflare. We have received your materials and will review them shortly.\n\nBest,\nCloudflare Recruiting"
+  },
+  {
+    "gmail_message_id": "msg_synth_rej_09",
+    "gmail_thread_id": "thread_synth_09",
+    "history_id": "1029",
+    "sender": "jobs@cloudflare.com",
+    "recipients": [
+      "owner@relayn.local"
+    ],
+    "subject": "Update on your application with Cloudflare",
+    "sent_at": "2026-11-04T13:50:48.453944+00:00",
+    "snippet": "Thank you for considering Cloudflare. Unfortunately we will not be moving forward...",
+    "body_plain": "Dear Akshit,\n\nThank you for taking the time to explore opportunities with Cloudflare. At this time, we have chosen to move forward with other candidates.\n\nBest regards,\nCloudflare Talent Team"
+  }
+]

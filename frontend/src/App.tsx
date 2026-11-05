@@ -15,16 +15,20 @@ const queryClient = new QueryClient({
 })
 
 // Placeholder Views for the next feature phases
+import { SyncControlPanel } from './features/sync/sync-control-panel'
+
 function OpportunitiesPage() {
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      <SyncControlPanel />
+
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold text-white">Opportunities Pipeline</h2>
       </div>
       <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-8 text-center text-slate-400">
         <p className="text-sm">No applications or recruiter leads tracked yet.</p>
         <p className="text-xs text-slate-500 mt-1">
-          Next phase will ingest Gmail conversations or load demo fixtures.
+          Click "Sync Mailbox Now" above to ingest career emails from the fixture gateway.
         </p>
       </div>
     </div>

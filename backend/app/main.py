@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from app.api.auth import router as auth_router
+from app.api.sync import router as sync_router
 
 
 def create_app() -> FastAPI:
@@ -15,6 +16,7 @@ def create_app() -> FastAPI:
 
     # Register routers
     app.include_router(auth_router)
+    app.include_router(sync_router)
 
     @app.get("/api/health")
     async def health_check():
