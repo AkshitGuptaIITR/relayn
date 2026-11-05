@@ -10,7 +10,7 @@ The requirements define product behavior. This document defines how to build it.
 | --- | --- | --- |
 | Repository | One monorepo with `frontend/` and `backend/` | Keep the UI, API, worker, migrations, and tests versioned together. |
 | Frontend | React, TypeScript, Vite, React Router | Client-side authenticated productivity application. |
-| UI and API state | Tailwind CSS, shadcn/ui, Lucide, TanStack Query | Reusable UI, typed requests, cache invalidation, and progress polling. Recharts follows the core workflow. |
+| UI and API state | Tailwind CSS, shadcn/ui, Lucide, TanStack Query, Recharts | Reusable UI, typed requests, cache invalidation, and progress polling. Sankey diagrams and pipeline funnel charts for visualizing the SWE application-to-offer funnel. |
 | Backend | Python, FastAPI, Pydantic, SQLAlchemy, Alembic | One API/business-service layer and explicit data validation. |
 | Database | PostgreSQL | Career records, durable work, coordination, and audit evidence in one transactional store. |
 | Runtime | `app`, `worker`, and `db` Compose services | Keep HTTP responsive while imports and processing continue without a browser. |

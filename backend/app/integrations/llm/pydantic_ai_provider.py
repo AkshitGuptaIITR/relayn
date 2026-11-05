@@ -40,7 +40,8 @@ class PydanticAIExtractionProvider:
 
         if self.api_key:
             # Pass the key explicitly so no process-wide environment state is mutated.
-            target_model = model_name or "gemini-2.5-flash"
+            # Google recommends gemini-3.8-flash for new users
+            target_model = model_name or "gemini-3.8-flash"
             target_model = target_model.removeprefix("google:")
             model = GoogleModel(
                 target_model,

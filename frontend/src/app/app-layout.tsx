@@ -1,5 +1,6 @@
 import { NavLink, Outlet } from 'react-router-dom'
 import {
+  LayoutDashboard,
   Briefcase,
   Users,
   CheckSquare,
@@ -14,7 +15,8 @@ export function AppLayout() {
   const { auth, logout } = useAuth()
 
   const navItems = [
-    { name: 'Opportunities', path: '/', icon: Briefcase },
+    { name: 'Dashboard', path: '/', icon: LayoutDashboard },
+    { name: 'Opportunities', path: '/opportunities', icon: Briefcase },
     { name: 'Review Queue', path: '/review', icon: FileCheck2 },
     { name: 'Follow-ups', path: '/follow-ups', icon: CheckSquare },
     { name: 'Contacts', path: '/contacts', icon: Users },
@@ -22,9 +24,9 @@ export function AppLayout() {
   ]
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col md:flex-row">
-      {/* Sidebar */}
-      <aside className="w-full md:w-64 bg-slate-900 border-b md:border-b-0 md:border-r border-slate-800 flex flex-col shrink-0">
+    <div className="h-screen bg-slate-950 text-slate-100 flex flex-col md:flex-row overflow-hidden">
+      {/* Sticky / Fixed Sidebar */}
+      <aside className="w-full md:w-64 bg-slate-900 border-b md:border-b-0 md:border-r border-slate-800 flex flex-col shrink-0 md:h-screen md:sticky md:top-0">
         {/* Brand */}
         <div className="h-16 flex items-center px-6 border-b border-slate-800/80">
           <div className="w-8 h-8 rounded-lg bg-indigo-600/20 text-indigo-400 font-bold flex items-center justify-center border border-indigo-500/30 mr-3">

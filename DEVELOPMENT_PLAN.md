@@ -86,7 +86,7 @@ Tests are developed with each task; Phase 6 consolidates coverage and runs the c
 | ID | Feature | Prerequisites and boundary |
 | --- | --- | --- |
 | S01 | Career assistant and local follow-up drafting | Stable record APIs/evidence and shared AI limits. Allowlisted bounded read tools, no arbitrary SQL or external writes; hide UI until usable. |
-| S02 | Additional Recharts visualizations and advanced dashboard polish | Validated metrics/read queries. Do not use charts to substitute for missing core workflows. |
+| S02 | Pipeline Sankey Funnel & Recharts Visualizations Dashboard | Validated metrics/read queries. Visualizes the SWE job search funnel: Applications & Recruiter Leads -> Screening -> Assessments -> Interview Rounds -> Offers & Rejections. |
 
 No task introduces multi-user auth, hosted services, Gmail writes, attachments/OCR, Calendar permissions, external job search, or push subscriptions.
 

@@ -5,9 +5,9 @@ import { AuthProvider } from './app/auth-context'
 import { LoginPage } from './features/auth/login-page'
 import { AppLayout } from './app/app-layout'
 import { ProtectedRoute } from './app/protected-route'
-import { SyncControlPanel } from './features/sync/sync-control-panel'
 import { OpportunityList } from './features/opportunities/opportunity-list'
 import { OpportunityDetailView } from './features/opportunities/opportunity-detail'
+import { DashboardPage } from './features/dashboard/dashboard-page'
 import { ReviewQueuePage } from './features/review/review-queue-page'
 import { FollowUpsPage } from './features/followups/follow-ups-page'
 import { SettingsPage } from './features/settings/settings-page'
@@ -35,13 +35,11 @@ function OpportunitiesPage() {
 
   return (
     <div className="space-y-6">
-      <SyncControlPanel />
-
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-bold text-white tracking-tight">Software Engineering Pipeline</h2>
           <p className="text-xs text-slate-400 mt-0.5">
-            Active applications, recruiter leads, take-homes, and interview rounds
+            Manage your applications, recruiter outreach, take-homes, and interview rounds
           </p>
         </div>
       </div>
@@ -71,7 +69,8 @@ export function App() {
             <Route path="/login" element={<LoginPage />} />
             <Route element={<ProtectedRoute />}>
               <Route element={<AppLayout />}>
-                <Route path="/" element={<OpportunitiesPage />} />
+                <Route path="/" element={<DashboardPage />} />
+                <Route path="/opportunities" element={<OpportunitiesPage />} />
                 <Route path="/review" element={<ReviewQueuePage />} />
                 <Route path="/follow-ups" element={<FollowUpsPage />} />
                 <Route path="/contacts" element={<ContactsPage />} />
