@@ -2,6 +2,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from app.api.auth import router as auth_router
 from app.api.career import router as career_router
+from app.api.google_oauth import router as google_oauth_router
 from app.api.sync import router as sync_router
 
 
@@ -18,6 +19,7 @@ def create_app() -> FastAPI:
     # Register routers
     app.include_router(auth_router)
     app.include_router(career_router)
+    app.include_router(google_oauth_router)
     app.include_router(sync_router)
 
     @app.get("/api/health")
