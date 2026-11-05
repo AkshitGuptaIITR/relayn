@@ -1,70 +1,106 @@
-import { useEffect, useState } from 'react'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { AuthProvider } from './app/auth-context'
+import { LoginPage } from './features/auth/login-page'
+import { AppLayout } from './app/app-layout'
+import { ProtectedRoute } from './app/protected-route'
 
-interface HealthResponse {
-  status: string
-  app: string
-  version: string
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+})
+
+// Placeholder Views for the next feature phases
+function OpportunitiesPage() {
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-bold text-white">Opportunities Pipeline</h2>
+      </div>
+      <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-8 text-center text-slate-400">
+        <p className="text-sm">No applications or recruiter leads tracked yet.</p>
+        <p className="text-xs text-slate-500 mt-1">
+          Next phase will ingest Gmail conversations or load demo fixtures.
+        </p>
+      </div>
+    </div>
+  )
 }
 
-export function App() {
-  const [health, setHealth] = useState<HealthResponse | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    fetch('/api/health')
-      .then((res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`)
-        return res.json()
-      })
-      .then((data: HealthResponse) => {
-        setHealth(data)
-        setLoading(false)
-      })
-      .catch((err) => {
-        setError(err.message)
-        setLoading(false)
-      })
-  }, [])
-
+function ReviewQueuePage() {
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col items-center justify-center p-6">
-      <div className="max-w-md w-full bg-slate-900 border border-slate-800 rounded-xl p-8 shadow-2xl text-center">
-        <div className="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-indigo-600/20 text-indigo-400 mb-4 font-bold text-xl">
-          R
-        </div>
-        <h1 className="text-2xl font-bold tracking-tight text-white mb-2">Relayn</h1>
-        <p className="text-sm text-slate-400 mb-6">Your job search, on autopilot.</p>
+    <div className="space-y-4">
+      <h2 className="text-xl font-bold text-white">Review Queue</h2>
+      <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-8 text-center text-slate-400">
+        <p className="text-sm">No pending proposals awaiting review.</p>
+      </div>
+    </div>
+  )
+}
 
-        <div className="bg-slate-950 border border-slate-800 rounded-lg p-4 text-left">
-          <div className="text-xs uppercase tracking-wider text-slate-400 mb-2 font-semibold">
-            Backend API Link Status
-          </div>
-          {loading && <p className="text-sm text-slate-400">Connecting to backend...</p>}
-          {error && (
-            <p className="text-sm text-rose-400">
-              Connection failed: {error}. Make sure FastAPI is running on port 8000.
-            </p>
-          )}
-          {health && (
-            <div className="space-y-1 text-sm">
-              <div className="flex justify-between">
-                <span className="text-slate-400">Status:</span>
-                <span className="text-emerald-400 font-medium">{health.status}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Application:</span>
-                <span className="text-slate-200">{health.app}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Version:</span>
-                <span className="text-slate-200">{health.version}</span>
-              </div>
-            </div>
-          )}
+function FollowUpsPage() {
+  return (
+    <div className="space-y-4">
+      <h2 className="text-xl font-bold text-white">Follow-up Tasks</h2>
+      <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-8 text-center text-slate-400">
+        <p className="text-sm">No pending follow-ups or upcoming deadlines.</p>
+      </div>
+    </div>
+  )
+}
+
+function ContactsPage() {
+  return (
+    <div className="space-y-4">
+      <h2 className="text-xl font-bold text-white">Recruiters & Contacts</h2>
+      <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-8 text-center text-slate-400">
+        <p className="text-sm">No recruiter contacts discovered yet.</p>
+      </div>
+    </div>
+  )
+}
+
+function SettingsPage() {
+  return (
+    <div className="space-y-4">
+      <h2 className="text-xl font-bold text-white">Settings & Integration</h2>
+      <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-6 space-y-4 max-w-xl">
+        <div>
+          <h3 className="text-sm font-semibold text-slate-200">Gmail Connection</h3>
+          <p className="text-xs text-slate-400 mt-0.5">
+            Connect your mailbox via read-only OAuth or enable Synthetic Demo mode.
+          </p>
         </div>
       </div>
     </div>
+  )
+}
+
+export function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/login" element={<LoginPage />} />
+            <Route element={<ProtectedRoute />}>
+              <Route element={<AppLayout />}>
+                <Route path="/" element={<OpportunitiesPage />} />
+                <Route path="/review" element={<ReviewQueuePage />} />
+                <Route path="/follow-ups" element={<FollowUpsPage />} />
+                <Route path="/contacts" element={<ContactsPage />} />
+                <Route path="/settings" element={<SettingsPage />} />
+              </Route>
+            </Route>
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
+    </QueryClientProvider>
   )
 }
 

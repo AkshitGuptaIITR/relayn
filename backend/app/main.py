@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+from app.api.auth import router as auth_router
 
 
 def create_app() -> FastAPI:
@@ -12,11 +13,14 @@ def create_app() -> FastAPI:
         openapi_url="/api/openapi.json",
     )
 
+    # Register routers
+    app.include_router(auth_router)
+
     @app.get("/api/health")
     async def health_check():
         return {"status": "ok", "app": "relayn", "version": "0.1.0"}
 
-    # Catch-all 404 handler for /api/* to ensure API errors always return JSON
+    # Catch-all 404 handler for unknown /api/* routes
     @app.api_route("/api/{path_name:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"])
     async def api_not_found(request: Request, path_name: str):
         return JSONResponse(
