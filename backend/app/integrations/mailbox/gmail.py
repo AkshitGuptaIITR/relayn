@@ -1,6 +1,7 @@
 import base64
 import datetime
 import logging
+import time
 from typing import Any
 from google.auth.transport.requests import Request as GoogleAuthRequest
 from google.oauth2.credentials import Credentials
@@ -10,10 +11,21 @@ from app.integrations.mailbox.gateway import IngestedMessage, SyncResult
 
 logger = logging.getLogger("relayn.gmail_gateway")
 
-# Standard software engineering career search query
+# Production-grade software engineering career search query
+# Combines ATS domains, candidate lifecycle keywords, and excludes ecommerce/order receipts
 SWE_CAREER_GMAIL_QUERY = (
-    '("interview" OR "application" OR "recruiter" OR "hiring" OR "offer" '
-    'OR "assessment" OR "take-home" OR "systems design" OR "coding challenge")'
+    '('
+    'from:(*@*.greenhouse-mail.io OR *@*.lever.co OR *@*.ashbyhq.com '
+    'OR *@*.smartrecruiters.com OR *@*.myworkday.com OR *@*.jobvite.com '
+    'OR *@*.icims.com OR *@*.bamboohr.com OR *@*.rippling-ats.com) '
+    'OR '
+    'subject:(interview OR "application received" OR "application submitted" '
+    'OR "your application" OR "next steps" OR "coding challenge" OR "technical assessment" '
+    'OR "offer of employment" OR "moving forward" OR "not moving forward" '
+    'OR "let\'s connect" OR "hiring team" OR "recruiting team" OR "candidacy")'
+    ') '
+    '-subject:("order confirmation" OR "has shipped" OR "your receipt" '
+    'OR "credit card" OR "statement is ready" OR "password reset")'
 )
 
 
@@ -96,75 +108,110 @@ class GmailGateway:
                 logger.warning("history.list failed or expired: %s; falling back to query search", e)
 
         # Initial or fallback search
-        search_resp = (
-            service.users()
-            .messages()
-            .list(
-                userId="me",
-                q=SWE_CAREER_GMAIL_QUERY,
-                maxResults=limit,
+        msg_stubs = []
+        page_token = None
+        while len(msg_stubs) < limit:
+            batch_size = min(limit - len(msg_stubs), 500)
+            search_resp = (
+                service.users()
+                .messages()
+                .list(
+                    userId="me",
+                    q=SWE_CAREER_GMAIL_QUERY,
+                    maxResults=batch_size,
+                    pageToken=page_token,
+                )
+                .execute()
             )
-            .execute()
-        )
+            stubs = search_resp.get("messages", [])
+            if not stubs:
+                break
+            msg_stubs.extend(stubs)
+            page_token = search_resp.get("nextPageToken")
+            if not page_token:
+                break
 
-        msg_stubs = search_resp.get("messages", [])
         messages = []
         for stub in msg_stubs:
             msg = self._fetch_message_detail(service, stub["id"])
             if msg:
                 messages.append(msg)
+            time.sleep(0.08)  # Polite pacing to respect Gmail API per-minute limits
 
-        profile = service.users().getProfile(userId="me").execute()
-        new_history_id = profile.get("historyId")
+        # Safe profile fetch with retry
+        new_history_id = None
+        for _ in range(3):
+            try:
+                profile = service.users().getProfile(userId="me").execute()
+                new_history_id = profile.get("historyId")
+                break
+            except Exception as e:
+                if "rateLimitExceeded" in str(e) or "403" in str(e):
+                    time.sleep(5)
+                else:
+                    break
+
+        if not new_history_id and messages:
+            # Fallback to highest history ID among fetched messages
+            histories = [int(m.history_id) for m in messages if m.history_id and m.history_id.isdigit()]
+            if histories:
+                new_history_id = str(max(histories))
 
         return SyncResult(
             messages=messages,
             new_history_id=new_history_id,
-            has_more=bool(search_resp.get("nextPageToken")),
+            has_more=bool(page_token),
         )
 
     def _fetch_message_detail(self, service: Any, message_id: str) -> IngestedMessage | None:
-        try:
-            full_msg = (
-                service.users()
-                .messages()
-                .get(userId="me", id=message_id, format="full")
-                .execute()
-            )
+        max_retries = 4
+        for attempt in range(max_retries):
+            try:
+                full_msg = (
+                    service.users()
+                    .messages()
+                    .get(userId="me", id=message_id, format="full")
+                    .execute()
+                )
+                headers = {
+                    h["name"].lower(): h["value"]
+                    for h in full_msg.get("payload", {}).get("headers", [])
+                }
 
-            headers = {
-                h["name"].lower(): h["value"]
-                for h in full_msg.get("payload", {}).get("headers", [])
-            }
+                sender = headers.get("from", "unknown@sender.com")
+                to_header = headers.get("to", "")
+                recipients = [r.strip() for r in to_header.split(",") if r.strip()]
+                subject = headers.get("subject", "")
+                
+                # Internal date timestamp (ms to UTC datetime)
+                internal_date_ms = int(full_msg.get("internalDate", "0"))
+                sent_at = datetime.datetime.fromtimestamp(
+                    internal_date_ms / 1000.0, tz=datetime.timezone.utc
+                ) if internal_date_ms else datetime.datetime.now(datetime.timezone.utc)
 
-            sender = headers.get("from", "unknown@sender.com")
-            to_header = headers.get("to", "")
-            recipients = [r.strip() for r in to_header.split(",") if r.strip()]
-            subject = headers.get("subject", "")
-            
-            # Internal date timestamp (ms to UTC datetime)
-            internal_date_ms = int(full_msg.get("internalDate", "0"))
-            sent_at = datetime.datetime.fromtimestamp(
-                internal_date_ms / 1000.0, tz=datetime.timezone.utc
-            ) if internal_date_ms else datetime.datetime.now(datetime.timezone.utc)
+                snippet = full_msg.get("snippet", "")
+                body_plain = self._extract_plain_text(full_msg.get("payload", {})) or snippet
 
-            snippet = full_msg.get("snippet", "")
-            body_plain = self._extract_plain_text(full_msg.get("payload", {})) or snippet
-
-            return IngestedMessage(
-                gmail_message_id=full_msg["id"],
-                gmail_thread_id=full_msg["threadId"],
-                history_id=full_msg.get("historyId"),
-                sender=sender,
-                recipients=recipients,
-                subject=subject,
-                sent_at=sent_at,
-                snippet=snippet,
-                body_plain=body_plain,
-            )
-        except Exception as e:
-            logger.error("Failed to fetch Gmail message %s: %s", message_id, e)
-            return None
+                return IngestedMessage(
+                    gmail_message_id=full_msg["id"],
+                    gmail_thread_id=full_msg["threadId"],
+                    history_id=full_msg.get("historyId"),
+                    sender=sender,
+                    recipients=recipients,
+                    subject=subject,
+                    sent_at=sent_at,
+                    snippet=snippet,
+                    body_plain=body_plain,
+                )
+            except Exception as e:
+                err_str = str(e)
+                if ("rateLimitExceeded" in err_str or "403" in err_str or "429" in err_str) and attempt < max_retries - 1:
+                    backoff = 6 * (attempt + 1)
+                    logger.warning("Gmail rate limit encountered on message %s; sleeping %ds before retry...", message_id, backoff)
+                    time.sleep(backoff)
+                else:
+                    logger.error("Failed to fetch Gmail message %s: %s", message_id, e)
+                    return None
 
     def _extract_plain_text(self, payload: dict) -> str:
         """Extracts and base64-decodes plain text from multipart email payload."""

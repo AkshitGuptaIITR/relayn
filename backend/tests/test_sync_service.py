@@ -20,7 +20,7 @@ async def test_synthetic_mailbox_sync_and_deduplication():
         await session.commit()
 
     # 1. Initial sync
-    new_count = await sync_service.sync_mailbox(trigger="test_initial")
+    new_count = await sync_service.sync_mailbox(trigger="test_initial", limit=500)
     assert new_count > 0
 
     # Verify messages and queued jobs exist in DB
@@ -31,7 +31,7 @@ async def test_synthetic_mailbox_sync_and_deduplication():
         assert job_count == new_count
 
     # 2. Second sync immediately after: should ingest 0 duplicates
-    second_count = await sync_service.sync_mailbox(trigger="test_incremental")
+    second_count = await sync_service.sync_mailbox(trigger="test_incremental", limit=500)
     assert second_count == 0
 
     # Verify message count did not change

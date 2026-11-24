@@ -68,3 +68,31 @@ async def test_provider_falls_back_without_api_key(monkeypatch):
 
     assert result.is_career_related is True
     assert result.company_name == "Stripe"
+
+
+@pytest.mark.asyncio
+async def test_provider_falls_back_on_503_unavailable(monkeypatch):
+    provider = PydanticAIExtractionProvider(api_key="test-api-key")
+
+    async def fake_failing_run(prompt: str):
+        from pydantic_ai.exceptions import ModelUnavailableError
+        raise ModelUnavailableError(
+            "gemini-3.5-flash-lite",
+            "This model is currently experiencing high demand. Spikes in demand are usually temporary.",
+        )
+
+    provider.agent = types.SimpleNamespace(run=fake_failing_run)
+
+    # In production mode with gemini provider, 503 should gracefully trigger fixture fallback
+    monkeypatch.setattr("app.integrations.llm.pydantic_ai_provider.settings.RELAYN_ENV", "production")
+    monkeypatch.setattr("app.integrations.llm.pydantic_ai_provider.settings.AI_PROVIDER", "gemini")
+
+    result = await provider.extract_email(
+        sender="jobs@stripe.com",
+        recipients=["owner@relayn.local"],
+        subject="Application received",
+        body_plain="We received your application for Staff Backend Engineer.",
+    )
+
+    assert result.is_career_related is True
+    assert result.company_name == "Stripe"

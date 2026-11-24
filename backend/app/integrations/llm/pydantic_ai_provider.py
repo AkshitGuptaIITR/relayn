@@ -1,5 +1,6 @@
 import logging
 from pydantic_ai import Agent
+from pydantic_ai.exceptions import ModelUnavailableError, UsageLimitExceeded
 from pydantic_ai.models.google import GoogleModel
 from pydantic_ai.providers.google import GoogleProvider
 from app.core.config import settings
@@ -9,22 +10,52 @@ from app.schemas.extraction import EmailExtractionResult
 logger = logging.getLogger("relayn.pydantic_ai")
 
 EXTRACTION_SYSTEM_PROMPT = """
-You are an expert AI Career Relationship Agent.
+You are an expert AI Career Relationship Intelligence Agent for software engineering professionals.
 Analyze the provided email and extract structured career management insights according to the schema.
 
-Rules:
-1. Determine if this email is directly related to a job application, recruiter outreach, interview, technical test, offer, or rejection.
-2. If it is NOT career related (e.g. newsletter, product marketing, order confirmation, spam), set is_career_related=false.
-3. If it IS career related:
-   - Identify company_name and clean domain.
-   - Identify role_title.
-   - Determine opportunity_type: 'application' or 'lead'.
-   - Determine current_stage: 'lead', 'applied', 'screening', 'assessment', 'interviewing', 'offer', 'rejected', or 'withdrawn'.
-   - Categorize software engineering interview rounds if applicable: 'recruiter_screen', 'technical_screen', 'coding_dsa', 'system_design', 'take_home_review', 'hiring_manager', 'behavioral', or 'onsite_loop'.
-   - Extract meeting links (Google Meet, Zoom) and preparation notes into milestones.
-   - Extract actionable candidate follow-up tasks into follow_ups.
-   - Extract exact evidence quotes from the body.
-   - If ambiguous, set requires_human_review=true and explain in review_reason.
+### TWO-TIER CLASSIFICATION RULES:
+1. primary_category:
+   - "career_direct": Active personal application, interview, assessment, offer, or rejection for the candidate.
+   - "career_outreach": 1-on-1 personalized recruiter or hiring manager outreach expressing interest in the candidate.
+   - "career_automated": Automated job alert digests (LinkedIn, Indeed, Glassdoor), talent network newsletters, referral status updates for someone else, interview feedback surveys.
+   - "non_career": Commercial marketing, order receipts, shipping notifications, newsletters, personal emails, general spam.
+
+2. lifecycle_intent:
+   - "application_acknowledgment": Confirmation that an application was submitted or received.
+   - "recruiter_screen_invitation": Recruiter reaching out or inviting candidate to schedule an initial screen.
+   - "screening_scheduled": Recruiter screen date/time confirmed.
+   - "technical_assessment": Take-home coding challenge, online assessment (HackerRank, CodeSignal), or repo link.
+   - "interview_scheduled": Technical screen, system design, coding, or onsite loop scheduled.
+   - "interview_completed": Post-interview thank you, debrief, or next step notice.
+   - "interview_survey": Candidate experience feedback requests or rating surveys ("Rate your interview experience").
+   - "offer_communication": Formal or informal job offer, compensation package, or offer letter.
+   - "rejection_notice": Notice that the company is moving forward with other candidates.
+   - "status_update": General recruitment process update, delay, or check-in.
+   - "job_digest": Multi-job recommendations from aggregators, coding platform contest promos.
+   - "referral_update": Updates regarding candidate referring another person.
+   - "irrelevant_noise": Completely unrelated communication, receipts, alerts, shipping.
+
+### CRITICAL BOUNDARIES & EDGE CASES:
+- Non-Career Tech Company Alerts: Even if the email comes from a known tech company (e.g. GitHub, Uber, DoorDash, Stripe, Google, Apple, Amazon), if it is a delivery receipt, ride summary, monthly billing invoice, flight ticket, or technical security/vulnerability notification (e.g., "[GitHub] Security vulnerability alert"), it MUST be classified as primary_category="non_career", lifecycle_intent="irrelevant_noise", is_career_related=false.
+- Referrals for Others: If the email is a candidate referral notification where the user referred someone else (e.g., "Thank you for referring [Name]"), classify as primary_category="career_automated", lifecycle_intent="referral_update", is_career_related=false.
+- Candidate Experience Surveys: If the email asks to rate the interview process or provide feedback on the interview experience, classify as primary_category="career_automated", lifecycle_intent="interview_survey", is_career_related=false.
+- Coding Platform Contests: If the email is from LeetCode, CodeSignal, or HackerRank announcing public contests, rankings, or courses (and NOT a specific company assessment link), classify as primary_category="career_automated", lifecycle_intent="job_digest", is_career_related=false.
+- If primary_category is "career_automated" or "non_career", set is_career_related=false.
+- If primary_category is "career_direct" or "career_outreach", set is_career_related=true.
+- DO NOT invent a generic role title like "Software Engineer" if the role is not stated in the email. Set role_title=null, set confidence=0.7, and flag requires_human_review=true with review_reason="Role title not specified in email".
+- For Software Engineering interview rounds, classify round_category:
+  * "recruiter_screen": Phone screen with recruiter/talent partner.
+  * "technical_screen": Initial technical phone or video screen.
+  * "coding_dsa": Live coding, algorithms, data structures.
+  * "system_design": Systems architecture, scalability, distributed systems.
+  * "take_home_review": Review or presentation of candidate's take-home project.
+  * "hiring_manager": Conversation with Engineering Director or Manager.
+  * "behavioral": Values, culture fit, STAR method discussion.
+  * "onsite_loop": Full interview loop or multiple rounds.
+- Extract video meeting links (Google Meet, Zoom, Teams, Chime) into milestones.
+- Extract preparation notes into milestones.prep_notes.
+- Extract candidate action items (e.g. "Reply with availability", "Submit code by Sunday") into follow_ups.
+- Extract exact supporting quote into evidence_quote.
 """
 
 
@@ -40,8 +71,7 @@ class PydanticAIExtractionProvider:
 
         if self.api_key:
             # Pass the key explicitly so no process-wide environment state is mutated.
-            # Google recommends gemini-3.8-flash for new users
-            target_model = model_name or "gemini-3.8-flash"
+            target_model = model_name or settings.GEMINI_MODEL
             target_model = target_model.removeprefix("google:")
             model = GoogleModel(
                 target_model,
@@ -79,5 +109,21 @@ Email Body:
             result = await self.agent.run(user_content)
             return result.output
         except Exception as e:
-            logger.warning("Pydantic AI extraction error: %s; safely falling back to fixtures.", e)
-            return await self.fallback.extract_email(sender, recipients, subject, body_plain)
+            err_str = str(e).lower()
+            is_capacity_or_quota = (
+                isinstance(e, (ModelUnavailableError, UsageLimitExceeded))
+                or "503" in err_str
+                or "unavailable" in err_str
+                or "429" in err_str
+                or "quota" in err_str
+                or "resource_exhausted" in err_str
+                or "high demand" in err_str
+            )
+            if is_capacity_or_quota or settings.AI_PROVIDER == "fixtures" or settings.RELAYN_ENV == "test":
+                logger.warning(
+                    "Pydantic AI extraction fallback triggered (%s); falling back to deterministic fixture extractor.",
+                    e,
+                )
+                return await self.fallback.extract_email(sender, recipients, subject, body_plain)
+            logger.error("Pydantic AI extraction failed in production: %s", e)
+            raise RuntimeError(f"AI extraction service error: {e}") from e

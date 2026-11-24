@@ -33,13 +33,14 @@ async def test_end_to_end_pipeline_processing():
     # 2. Sync synthetic emails
     gateway = SyntheticMailboxGateway()
     sync_service = MailboxSyncService(gateway=gateway)
-    synced_count = await sync_service.sync_mailbox()
+    synced_count = await sync_service.sync_mailbox(limit=500)
     assert synced_count > 0
 
     # 3. Process all emails through pipeline
-    pipeline = CareerPipelineService()
+    from app.integrations.llm.fixtures import DeterministicFixtureProvider
+    pipeline = CareerPipelineService(llm_provider=DeterministicFixtureProvider())
     async with async_session_factory() as session:
-        emails = (await session.execute(select(EmailMessage.id))).scalars().all()
+        emails = (await session.execute(select(EmailMessage.id).order_by(EmailMessage.sent_at.asc()))).scalars().all()
 
     for email_id in emails:
         await pipeline.process_email_message(email_id)
@@ -75,6 +76,37 @@ async def test_end_to_end_pipeline_processing():
             )
         ).scalar_one()
         assert meta_opp.status == "rejected"
+
+        # Datadog should have exactly ONE opportunity, not duplicated, progressing to 'interviewing'
+        datadog_opps = (
+            await session.execute(
+                select(Opportunity)
+                .join(Company)
+                .where(Company.name == "Datadog")
+            )
+        ).scalars().all()
+        assert len(datadog_opps) == 1
+        assert datadog_opps[0].status == "interviewing"
+
+        # Airbnb should have exactly ONE opportunity, not duplicated, progressing to 'rejected'
+        airbnb_opps = (
+            await session.execute(
+                select(Opportunity)
+                .join(Company)
+                .where(Company.name == "Airbnb")
+            )
+        ).scalars().all()
+        assert len(airbnb_opps) == 1
+        assert airbnb_opps[0].status == "rejected"
+
+        # Verify all emails have categories assigned
+        categorized_emails = (
+            await session.execute(
+                select(EmailMessage)
+                .where(EmailMessage.primary_category.isnot(None))
+            )
+        ).scalars().all()
+        assert len(categorized_emails) == len(emails)
 
         # Events and Follow-ups created
         events_count = (await session.execute(select(func.count(OpportunityEvent.id)))).scalar()

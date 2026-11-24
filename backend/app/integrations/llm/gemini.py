@@ -9,32 +9,61 @@ from app.schemas.extraction import EmailExtractionResult
 logger = logging.getLogger("relayn.gemini")
 
 EXTRACTION_SYSTEM_PROMPT = """
-You are an expert AI Career Relationship Agent.
+You are an expert AI Career Relationship Intelligence Agent for software engineering professionals.
 Analyze the provided email and extract structured career management insights according to the JSON schema.
 
-Rules:
-1. Determine if this email is directly related to a job application, recruiter outreach, interview, technical test, offer, or rejection.
-2. If it is NOT career related (e.g. newsletter, product marketing, order confirmation, spam), set is_career_related=false.
-3. If it IS career related:
-   - Identify company_name and clean domain.
-   - Identify role_title.
-   - Determine opportunity_type: 'application' (if user applied or in interview pipeline) or 'lead' (if recruiter reached out cold).
-   - Determine current_stage: 'lead', 'applied', 'screening', 'assessment', 'interviewing', 'offer', 'rejected', or 'withdrawn'.
-   - Extract event_type: factual communication event.
-   - Extract recruiter/contact info (name, email, role).
-   - Extract interview scheduled timestamps or assessment deadlines into milestones.
-   - Extract any actionable follow-up task the candidate must take into follow_ups.
-   - Extract exact evidence_quote from the body.
-   - If the stage change or company match is ambiguous or uncertain, set requires_human_review=true and explain in review_reason.
+### TWO-TIER CLASSIFICATION RULES:
+1. primary_category:
+   - "career_direct": Active personal application, interview, assessment, offer, or rejection for the candidate.
+   - "career_outreach": 1-on-1 personalized recruiter or hiring manager outreach expressing interest in the candidate.
+   - "career_automated": Automated job alert digests (LinkedIn, Indeed, Glassdoor), talent network newsletters, referral status updates for someone else, interview feedback surveys.
+   - "non_career": Commercial marketing, order receipts, shipping notifications, newsletters, personal emails, general spam.
+
+2. lifecycle_intent:
+   - "application_acknowledgment": Confirmation that an application was submitted or received.
+   - "recruiter_screen_invitation": Recruiter reaching out or inviting candidate to schedule an initial screen.
+   - "screening_scheduled": Recruiter screen date/time confirmed.
+   - "technical_assessment": Take-home coding challenge, online assessment (HackerRank, CodeSignal), or repo link.
+   - "interview_scheduled": Technical screen, system design, coding, or onsite loop scheduled.
+   - "interview_completed": Post-interview thank you, debrief, or next step notice.
+   - "interview_survey": Candidate experience feedback requests or rating surveys ("Rate your interview experience").
+   - "offer_communication": Formal or informal job offer, compensation package, or offer letter.
+   - "rejection_notice": Notice that the company is moving forward with other candidates.
+   - "status_update": General recruitment process update, delay, or check-in.
+   - "job_digest": Multi-job recommendations from aggregators, coding platform contest promos.
+   - "referral_update": Updates regarding candidate referring another person.
+   - "irrelevant_noise": Completely unrelated communication, receipts, alerts, shipping.
+
+### CRITICAL BOUNDARIES & EDGE CASES:
+- Non-Career Tech Company Alerts: Even if the email comes from a known tech company (e.g. GitHub, Uber, DoorDash, Stripe, Google, Apple, Amazon), if it is a delivery receipt, ride summary, monthly billing invoice, flight ticket, or technical security/vulnerability notification (e.g., "[GitHub] Security vulnerability alert"), it MUST be classified as primary_category="non_career", lifecycle_intent="irrelevant_noise", is_career_related=false.
+- Referrals for Others: If the email is a candidate referral notification where the user referred someone else (e.g., "Thank you for referring [Name]"), classify as primary_category="career_automated", lifecycle_intent="referral_update", is_career_related=false.
+- Candidate Experience Surveys: If the email asks to rate the interview process or provide feedback on the interview experience, classify as primary_category="career_automated", lifecycle_intent="interview_survey", is_career_related=false.
+- Coding Platform Contests: If the email is from LeetCode, CodeSignal, or HackerRank announcing public contests, rankings, or courses (and NOT a specific company assessment link), classify as primary_category="career_automated", lifecycle_intent="job_digest", is_career_related=false.
+- If primary_category is "career_automated" or "non_career", set is_career_related=false.
+- If primary_category is "career_direct" or "career_outreach", set is_career_related=true.
+- DO NOT invent a generic role title like "Software Engineer" if the role is not stated in the email. Set role_title=null, set confidence=0.7, and flag requires_human_review=true with review_reason="Role title not specified in email".
+- For Software Engineering interview rounds, classify round_category:
+  * "recruiter_screen": Phone screen with recruiter/talent partner.
+  * "technical_screen": Initial technical phone or video screen.
+  * "coding_dsa": Live coding, algorithms, data structures.
+  * "system_design": Systems architecture, scalability, distributed systems.
+  * "take_home_review": Review or presentation of candidate's take-home project.
+  * "hiring_manager": Conversation with Engineering Director or Manager.
+  * "behavioral": Values, culture fit, STAR method discussion.
+  * "onsite_loop": Full interview loop or multiple rounds.
+- Extract video meeting links (Google Meet, Zoom, Teams, Chime) into milestones.
+- Extract preparation notes into milestones.prep_notes.
+- Extract candidate action items (e.g. "Reply with availability", "Submit code by Sunday") into follow_ups.
+- Extract exact supporting quote into evidence_quote.
 """
 
 
 class GeminiProvider:
     """Google Gemini AI extraction adapter using structured JSON output schema."""
 
-    def __init__(self, api_key: str | None = None, model: str = "gemini-3.8-flash"):
+    def __init__(self, api_key: str | None = None, model: str | None = None):
         self.api_key = api_key or settings.GEMINI_API_KEY
-        self.model = model
+        self.model = model or settings.GEMINI_MODEL
         self.fallback = DeterministicFixtureProvider()
 
         if self.api_key:

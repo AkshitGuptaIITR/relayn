@@ -74,11 +74,20 @@ class CareerPipelineService:
                 return False
 
             email.is_processed = True
-            email.is_relevant = extracted.is_career_related
+            email.primary_category = extracted.primary_category
+            email.lifecycle_intent = extracted.lifecycle_intent
+            email.classification_confidence = extracted.confidence
+            email.classification_evidence = extracted.evidence_quote
+            email.is_relevant = extracted.primary_category in ["career_direct", "career_outreach"]
 
-            if not extracted.is_career_related:
+            if not email.is_relevant:
                 await session.commit()
-                logger.info("Email %s marked as non-career related.", email_message_id)
+                logger.info(
+                    "Email %s categorized as %s (%s); marked non-career.",
+                    email_message_id,
+                    extracted.primary_category,
+                    extracted.lifecycle_intent,
+                )
                 return True
 
             # 2. Match or create Company
@@ -114,17 +123,74 @@ class CareerPipelineService:
                     await session.flush()
                 created_contacts.append(contact)
 
-            # 4. Match or create Opportunity
-            role_title = extracted.role_title or "Software Engineer"
-            opp_stmt = (
-                select(Opportunity)
-                .where(Opportunity.company_id == company.id)
-                .where(Opportunity.role_title.ilike(role_title))
-            )
-            opp_res = await session.execute(opp_stmt)
-            opportunity = opp_res.scalar_one_or_none()
+            # 4. Smart Hierarchical Opportunity Resolution:
+            # Step A: Match by Gmail Thread ID (Strongest signal: same email chain)
+            opportunity = None
+            if email.gmail_thread_id:
+                thread_stmt = (
+                    select(Opportunity)
+                    .join(OpportunityEvent, OpportunityEvent.opportunity_id == Opportunity.id)
+                    .join(EmailMessage, OpportunityEvent.email_message_id == EmailMessage.id)
+                    .where(EmailMessage.gmail_thread_id == email.gmail_thread_id)
+                    .limit(1)
+                )
+                thread_res = await session.execute(thread_stmt)
+                opportunity = thread_res.scalar_one_or_none()
 
+            # Step B: Match by Recruiter Contact already linked to an active opportunity at this company
+            if not opportunity and created_contacts:
+                contact_ids = [c.id for c in created_contacts]
+                contact_opp_stmt = (
+                    select(Opportunity)
+                    .join(OpportunityContact, OpportunityContact.opportunity_id == Opportunity.id)
+                    .where(OpportunityContact.contact_id.in_(contact_ids))
+                    .where(Opportunity.company_id == company.id)
+                    .where(Opportunity.status.notin_(["rejected", "withdrawn"]))
+                    .order_by(Opportunity.updated_at.desc())
+                    .limit(1)
+                )
+                contact_opp_res = await session.execute(contact_opp_stmt)
+                opportunity = contact_opp_res.scalar_one_or_none()
+
+            # Step C: Match by Company with exactly ONE active (non-terminal) opportunity
+            if not opportunity:
+                active_stmt = (
+                    select(Opportunity)
+                    .where(Opportunity.company_id == company.id)
+                    .where(Opportunity.status.notin_(["rejected", "withdrawn"]))
+                )
+                active_res = await session.execute(active_stmt)
+                active_opps = active_res.scalars().all()
+                if len(active_opps) == 1:
+                    opportunity = active_opps[0]
+
+            # Step D: Match by Role Title (exact or substring/fuzzy) if multiple or no active
+            if not opportunity and extracted.role_title:
+                role_stmt = (
+                    select(Opportunity)
+                    .where(Opportunity.company_id == company.id)
+                    .where(Opportunity.role_title.ilike(f"%{extracted.role_title}%"))
+                    .order_by(Opportunity.updated_at.desc())
+                    .limit(1)
+                )
+                role_res = await session.execute(role_stmt)
+                opportunity = role_res.scalar_one_or_none()
+
+            # Step E: Keyword overlap matching between role titles
+            if not opportunity and extracted.role_title:
+                all_opps_stmt = select(Opportunity).where(Opportunity.company_id == company.id)
+                all_opps = (await session.execute(all_opps_stmt)).scalars().all()
+                stopwords = {"engineer", "engineering", "at", "for", "the", "-", "role", "position"}
+                extracted_words = {w for w in extracted.role_title.lower().split() if w not in stopwords}
+                for candidate in all_opps:
+                    cand_words = {w for w in candidate.role_title.lower().split() if w not in stopwords}
+                    if extracted_words and cand_words and (extracted_words.issubset(cand_words) or cand_words.issubset(extracted_words)):
+                        opportunity = candidate
+                        break
+
+            # Step F: Create new Opportunity if no existing candidacy matched
             is_new_opportunity = False
+            role_title = extracted.role_title or "Software Engineer"
             if not opportunity:
                 opportunity = Opportunity(
                     company_id=company.id,
@@ -139,6 +205,14 @@ class CareerPipelineService:
                 await session.flush()
                 is_new_opportunity = True
             else:
+                # If existing opportunity had a generic title and the new email has a specific role, upgrade it
+                if (
+                    opportunity.role_title in ["Software Engineer", "Systems Engineer", "Unknown Role"]
+                    and extracted.role_title
+                    and extracted.role_title not in ["Software Engineer", "Systems Engineer"]
+                ):
+                    opportunity.role_title = extracted.role_title
+
                 # Monotonic status progression
                 if extracted.current_stage:
                     curr_rank = STAGE_RANK.get(opportunity.status, 0)
@@ -204,17 +278,28 @@ class CareerPipelineService:
                 )
                 session.add(follow_up)
 
-            # 8. Human Review Proposal (if flagged)
-            if extracted.requires_human_review:
+            # 8. Human Review Proposal (if flagged or low confidence or missing role)
+            should_review = (
+                extracted.requires_human_review
+                or extracted.confidence < 0.80
+                or extracted.role_title is None
+            )
+            if should_review:
+                proposal_type = (
+                    "low_confidence_extraction"
+                    if extracted.confidence < 0.80
+                    else "ambiguous_role_or_match"
+                )
                 proposal = ReviewProposal(
                     email_message_id=email.id,
                     opportunity_id=opportunity.id,
-                    proposal_type="low_confidence_extraction",
+                    proposal_type=proposal_type,
                     proposed_changes={
                         "company_name": company_name,
-                        "role_title": role_title,
+                        "role_title": opportunity.role_title,
                         "stage": extracted.current_stage,
-                        "reason": extracted.review_reason,
+                        "confidence": extracted.confidence,
+                        "reason": extracted.review_reason or "Low confidence or missing role title",
                     },
                     status="pending",
                 )

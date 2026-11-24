@@ -46,6 +46,7 @@ class Settings(BaseSettings):
     # AI Provider
     AI_PROVIDER: Literal["fixtures", "gemini"] = "fixtures"
     GEMINI_API_KEY: str | None = None
+    GEMINI_MODEL: str = "gemini-3.5-flash-lite"
 
     # Google OAuth (Phase 5)
     GOOGLE_CLIENT_ID: str | None = None

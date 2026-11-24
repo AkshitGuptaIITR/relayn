@@ -12,6 +12,8 @@ async def test_deterministic_extraction_rejection():
         body_plain="Thank you for taking the time. At this time we have decided to pursue other candidates for the Production Engineer role.",
     )
     assert res.is_career_related is True
+    assert res.primary_category == "career_direct"
+    assert res.lifecycle_intent == "rejection_notice"
     assert res.company_name == "Meta"
     assert res.current_stage == "rejected"
     assert res.event_type == "rejection_received"
@@ -28,6 +30,8 @@ async def test_deterministic_extraction_offer():
         body_plain="We are thrilled to formally extend an offer of employment for Staff Backend Engineer. Base Salary: $235,000",
     )
     assert res.is_career_related is True
+    assert res.primary_category == "career_direct"
+    assert res.lifecycle_intent == "offer_communication"
     assert res.company_name == "Stripe"
     assert res.current_stage == "offer"
     assert res.event_type == "offer_received"
@@ -45,3 +49,88 @@ async def test_deterministic_extraction_noise_filtering():
         body_plain="Your package has shipped and will arrive tomorrow.",
     )
     assert res.is_career_related is False
+    assert res.primary_category == "non_career"
+    assert res.lifecycle_intent == "irrelevant_noise"
+
+
+@pytest.mark.asyncio
+async def test_deterministic_extraction_job_board_digest():
+    provider = DeterministicFixtureProvider()
+    res = await provider.extract_email(
+        sender="jobalerts-noreply@linkedin.com",
+        recipients=["me@relayn.local"],
+        subject="30 new jobs matching 'Staff Backend Engineer' - Job Alert",
+        body_plain="Explore the latest open roles for Staff Backend Engineer in Seattle.",
+    )
+    assert res.is_career_related is False
+    assert res.primary_category == "career_automated"
+    assert res.lifecycle_intent == "job_digest"
+
+
+@pytest.mark.asyncio
+async def test_tech_company_non_career_notifications():
+    provider = DeterministicFixtureProvider()
+    
+    # 1. GitHub security alert
+    res_gh = await provider.extract_email(
+        sender="notifications@github.com",
+        recipients=["me@relayn.local"],
+        subject="[GitHub] Security vulnerability alert for requests",
+        body_plain="A high severity vulnerability was detected in your dependency graph.",
+    )
+    assert res_gh.is_career_related is False
+    assert res_gh.primary_category == "non_career"
+    assert res_gh.lifecycle_intent == "irrelevant_noise"
+
+    # 2. Uber trip receipt
+    res_uber = await provider.extract_email(
+        sender="no-reply@uber.com",
+        recipients=["me@relayn.local"],
+        subject="Your trip with Uber on Saturday evening",
+        body_plain="Thanks for riding with Uber. Total: $24.50. View your receipt.",
+    )
+    assert res_uber.is_career_related is False
+    assert res_uber.primary_category == "non_career"
+    assert res_uber.lifecycle_intent == "irrelevant_noise"
+
+
+@pytest.mark.asyncio
+async def test_candidate_referral_updates():
+    provider = DeterministicFixtureProvider()
+    res = await provider.extract_email(
+        sender="careers@doordash.com",
+        recipients=["me@relayn.local"],
+        subject="Referral Received: Thank you for referring John Doe for Backend Engineer",
+        body_plain="Thank you for referring John Doe. Our team has received their application.",
+    )
+    assert res.is_career_related is False
+    assert res.primary_category == "career_automated"
+    assert res.lifecycle_intent == "referral_update"
+
+
+@pytest.mark.asyncio
+async def test_candidate_interview_feedback_surveys():
+    provider = DeterministicFixtureProvider()
+    res = await provider.extract_email(
+        sender="candidate-experience@meta.com",
+        recipients=["me@relayn.local"],
+        subject="Please rate your interview experience with Meta",
+        body_plain="We would love your feedback on how your interview process went yesterday.",
+    )
+    assert res.is_career_related is False
+    assert res.primary_category == "career_automated"
+    assert res.lifecycle_intent == "interview_survey"
+
+
+@pytest.mark.asyncio
+async def test_coding_contest_marketing():
+    provider = DeterministicFixtureProvider()
+    res = await provider.extract_email(
+        sender="contests@leetcode.com",
+        recipients=["me@relayn.local"],
+        subject="LeetCode Weekly Contest 390 is starting soon!",
+        body_plain="Register now for the weekly contest and test your algorithmic problem solving.",
+    )
+    assert res.is_career_related is False
+    assert res.primary_category == "career_automated"
+    assert res.lifecycle_intent == "job_digest"

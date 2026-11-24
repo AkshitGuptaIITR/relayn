@@ -38,7 +38,7 @@ class MailboxSyncService:
         # Fallback to offline synthetic fixture gateway
         return SyntheticMailboxGateway()
 
-    async def sync_mailbox(self, trigger: str = "manual") -> int:
+    async def sync_mailbox(self, trigger: str = "manual", limit: int = 50) -> int:
         async with async_session_factory() as session:
             # 1. Get or create singleton MailboxAccount
             stmt = select(MailboxAccount).limit(1)
@@ -65,7 +65,7 @@ class MailboxSyncService:
 
         try:
             # 2. Fetch messages from resolved gateway
-            sync_result: SyncResult = await gateway.fetch_messages(after_history_id=last_history)
+            sync_result: SyncResult = await gateway.fetch_messages(after_history_id=last_history, limit=limit)
             new_messages_count = 0
 
             async with async_session_factory() as session:

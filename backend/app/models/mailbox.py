@@ -4,6 +4,7 @@ from sqlalchemy import (
     BigInteger,
     Boolean,
     DateTime,
+    Float,
     ForeignKey,
     Index,
     Integer,
@@ -75,7 +76,15 @@ class EmailMessage(Base, TimestampMixin):
     # AI processing state
     is_processed: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False, index=True)
     is_relevant: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    primary_category: Mapped[str | None] = mapped_column(String(32), nullable=True, index=True)
+    lifecycle_intent: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    classification_confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
+    classification_evidence: Mapped[str | None] = mapped_column(Text, nullable=True)
     generation: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+
+    __table_args__ = (
+        Index("ix_email_messages_thread_sent", "gmail_thread_id", "sent_at"),
+    )
 
     # Relationships
     mailbox: Mapped["MailboxAccount"] = relationship("MailboxAccount", back_populates="messages")

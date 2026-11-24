@@ -171,7 +171,7 @@ export function SettingsPage() {
           </div>
           <div className="flex justify-between">
             <span className="text-slate-400">Primary Model:</span>
-            <span className="text-slate-200 font-mono">google:gemini-2.5-flash</span>
+            <span className="text-slate-200 font-mono">google:gemini-3.5-flash-lite</span>
           </div>
           <div className="flex justify-between">
             <span className="text-slate-400">Resilience Mode:</span>

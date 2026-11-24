@@ -24,12 +24,65 @@ class DeterministicFixtureProvider:
         sub_lower = subject.lower()
         body_lower = body_plain.lower()
 
-        # 1. Noise check: Newsletters, e-commerce, spam
-        if any(w in sub_lower or w in sender.lower() for w in ["newsletter", "order #", "shipped", "amazon.com", "medium.com"]):
+        # 1. Noise check: Newsletters, e-commerce, receipts, statements, delivery, alerts
+        noise_keywords = [
+            "newsletter", "order #", "shipped", "amazon.com", "medium.com", "receipt",
+            "trip with uber", "flight confirmation", "statement is now available",
+            "vulnerability alert", "tldr.tech", "chase.com", "delta.com", "doordash receipt",
+            "front door", "delivered"
+        ]
+        if any(w in sub_lower or w in sender.lower() for w in noise_keywords):
             return EmailExtractionResult(
+                primary_category="non_career",
+                lifecycle_intent="irrelevant_noise",
                 is_career_related=False,
                 confidence=0.99,
                 event_summary="Non-job related communication",
+            )
+
+        # 1b. Candidate Referrals (User referred someone else)
+        if "referral received" in sub_lower or "referral status" in sub_lower or "thank you for referring" in body_lower:
+            return EmailExtractionResult(
+                primary_category="career_automated",
+                lifecycle_intent="referral_update",
+                is_career_related=False,
+                confidence=0.97,
+                event_summary="Referral status communication for referred candidate",
+            )
+
+        # 1c. Automated Job Board Digests & Talent Community Newsletters
+        digest_keywords = [
+            "job alert", "jobs you may be interested in", "recommended jobs",
+            "jobs matching", "startup job digest", "weekly job digest",
+            "talent community", "talent network", "tech talks", "wellfound", "indeed"
+        ]
+        if any(w in sub_lower or w in sender.lower() for w in digest_keywords):
+            return EmailExtractionResult(
+                primary_category="career_automated",
+                lifecycle_intent="job_digest",
+                is_career_related=False,
+                confidence=0.96,
+                event_summary="Automated job board recommendation or talent newsletter",
+            )
+
+        # 1d. Candidate Experience Surveys (Feedback requests)
+        if any(w in sub_lower or w in body_lower for w in ["interview experience", "interview feedback", "rate your interview", "how was your interview"]):
+            return EmailExtractionResult(
+                primary_category="career_automated",
+                lifecycle_intent="interview_survey",
+                is_career_related=False,
+                confidence=0.98,
+                event_summary="Candidate experience feedback survey",
+            )
+
+        # 1e. Public coding contests & non-employer challenges
+        if any(w in sub_lower or w in sender.lower() for w in ["leetcode weekly contest", "biweekly contest", "hackerrank monthly", "codesignal challenge"]):
+            return EmailExtractionResult(
+                primary_category="career_automated",
+                lifecycle_intent="job_digest",
+                is_career_related=False,
+                confidence=0.97,
+                event_summary="Public competitive coding contest announcement",
             )
 
         # 2. Rejection check
@@ -37,6 +90,8 @@ class DeterministicFixtureProvider:
             company = self._guess_company(sender, subject, body_plain)
             role = self._guess_role(subject, body_plain)
             return EmailExtractionResult(
+                primary_category="career_direct",
+                lifecycle_intent="rejection_notice",
                 is_career_related=True,
                 confidence=0.95,
                 company_name=company,
@@ -66,6 +121,8 @@ class DeterministicFixtureProvider:
             ]
 
             return EmailExtractionResult(
+                primary_category="career_direct",
+                lifecycle_intent="offer_communication",
                 is_career_related=True,
                 confidence=0.98,
                 company_name=company,
@@ -102,6 +159,8 @@ class DeterministicFixtureProvider:
             ]
 
             return EmailExtractionResult(
+                primary_category="career_direct",
+                lifecycle_intent="technical_assessment",
                 is_career_related=True,
                 confidence=0.95,
                 company_name=company,
@@ -124,6 +183,7 @@ class DeterministicFixtureProvider:
 
             stage = "interviewing" if "interview" in sub_lower or "interview" in body_lower else "screening"
             event_type = "interview_scheduled" if "interview" in sub_lower else "screening_invitation"
+            lifecycle = "interview_scheduled" if "interview" in sub_lower else "recruiter_screen_invitation"
 
             milestones = []
             meeting_match = re.search(r"(https?://meet\.google\.com/[a-z-]+|https?://[a-z0-9.-]*zoom\.us/j/[0-9]+)", body_plain)
@@ -162,6 +222,8 @@ class DeterministicFixtureProvider:
             ]
 
             return EmailExtractionResult(
+                primary_category="career_direct",
+                lifecycle_intent=lifecycle,
                 is_career_related=True,
                 confidence=0.92,
                 company_name=company,
@@ -192,6 +254,8 @@ class DeterministicFixtureProvider:
             ]
 
             return EmailExtractionResult(
+                primary_category="career_outreach",
+                lifecycle_intent="recruiter_screen_invitation",
                 is_career_related=True,
                 confidence=0.90,
                 company_name=company,
@@ -210,6 +274,8 @@ class DeterministicFixtureProvider:
             company = self._guess_company(sender, subject, body_plain)
             role = self._guess_role(subject, body_plain)
             return EmailExtractionResult(
+                primary_category="career_direct",
+                lifecycle_intent="application_acknowledgment",
                 is_career_related=True,
                 confidence=0.96,
                 company_name=company,
@@ -221,9 +287,27 @@ class DeterministicFixtureProvider:
                 evidence_quote="Thank you for applying",
             )
 
-        # Default fallback: Career related with flag for review
+        # Check if any career keywords exist in subject or body
+        career_indicators = [
+            "interview", "application", "recruiter", "hiring", "offer",
+            "assessment", "candidacy", "next steps", "phone screen"
+        ]
+        has_career_intent = any(ci in sub_lower or ci in body_lower for ci in career_indicators)
+
+        if not has_career_intent:
+            return EmailExtractionResult(
+                primary_category="non_career",
+                lifecycle_intent="irrelevant_noise",
+                is_career_related=False,
+                confidence=0.95,
+                event_summary="Unrelated communication without career intent",
+            )
+
+        # Career related with flag for review
         company = self._guess_company(sender, subject, body_plain)
         return EmailExtractionResult(
+            primary_category="career_direct",
+            lifecycle_intent="status_update",
             is_career_related=True,
             confidence=0.60,
             company_name=company,
@@ -251,15 +335,36 @@ class DeterministicFixtureProvider:
         return "Unknown Company"
 
     def _guess_role(self, subject: str, body: str) -> str:
+        # Check specific patterns in subject first
+        patterns = [
+            r"Application Received:\s*([A-Za-z0-9\s\-]+?)\s+at\s+",
+            r"Next steps with [A-Za-z0-9\s\-]+ \(([^)]+)\)",
+            r"Your application to [^-]+ -\s*([^\n]+)",
+            r"Thank you for applying to [^-]+ -\s*([^\n]+)",
+        ]
+        for pat in patterns:
+            match = re.search(pat, subject, re.IGNORECASE)
+            if match:
+                candidate_role = match.group(1).strip()
+                if len(candidate_role) > 3:
+                    return candidate_role
+
         for r in [
-            "Staff Backend Engineer",
-            "Senior Platform Engineer",
-            "Production Engineer",
-            "Systems Engineer",
-            "Staff Software Engineer",
+            "Staff Distributed Systems Engineer",
+            "Senior Backend Engineer - Core Services",
             "Inference Infrastructure Engineer",
             "Staff Fullstack Engineer",
             "Founding Backend Engineer",
+            "Systems Reliability Engineer",
+            "Edge Runtime Engineer",
+            "Infrastructure Engineer",
+            "Crypto Backend Engineer",
+            "Workers Runtime Engineer",
+            "Staff Backend Engineer",
+            "Senior Platform Engineer",
+            "Production Engineer",
+            "Staff Software Engineer",
+            "Systems Engineer",
             "Software Engineer",
         ]:
             if r.lower() in subject.lower() or r.lower() in body.lower():

@@ -29,6 +29,9 @@ yarn-error.log*
 *.db
 *.db-shm
 *.db-wal
+*backup*.json
+*eval*_results.json
+custom_emails.json
 
 # IDE / OS
 .vscode/

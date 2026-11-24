@@ -1,6 +1,31 @@
 import datetime
 from typing import Literal
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
+
+# Primary email category (Tier 1)
+EmailPrimaryCategory = Literal[
+    "career_direct",    # Direct personal application, interview, assessment, offer, or rejection
+    "career_outreach",  # 1-on-1 personalized recruiter outreach
+    "career_automated", # Automated job alerts (LinkedIn/Indeed), talent community blasts, referral receipts
+    "non_career",       # Commercial emails, receipts, orders, newsletters, personal, spam
+]
+
+# Lifecycle communication intent (Tier 2)
+EmailLifecycleIntent = Literal[
+    "application_acknowledgment",
+    "recruiter_screen_invitation",
+    "screening_scheduled",
+    "technical_assessment",
+    "interview_scheduled",
+    "interview_completed",
+    "interview_survey",
+    "offer_communication",
+    "rejection_notice",
+    "status_update",
+    "job_digest",
+    "referral_update",
+    "irrelevant_noise",
+]
 
 # Opportunity types
 OpportunityType = Literal["application", "lead"]
@@ -106,13 +131,22 @@ class ExtractedFollowUp(BaseModel):
 class EmailExtractionResult(BaseModel):
     """
     Standardized structured outcome produced by the AI extraction pipeline:
+    - Categorizes email into two-tier taxonomy (primary_category + lifecycle_intent).
     - Identifies if the email is career-related.
     - Proposes company, role, stage, contacts, milestones, and follow-ups.
     - Includes confidence score and source quote evidence.
     """
 
+    primary_category: EmailPrimaryCategory = Field(
+        default="career_direct",
+        description="High-level category: career_direct, career_outreach, career_automated, non_career",
+    )
+    lifecycle_intent: EmailLifecycleIntent | None = Field(
+        default=None,
+        description="Specific intent or communication purpose",
+    )
     is_career_related: bool = Field(
-        ...,
+        default=True,
         description="True if this email is an application, recruiter outreach, interview, offer, or rejection",
     )
     confidence: float = Field(
@@ -121,6 +155,31 @@ class EmailExtractionResult(BaseModel):
         le=1.0,
         description="Confidence score of the extraction (0.0 to 1.0)",
     )
+
+    @model_validator(mode="before")
+    @classmethod
+    def sync_categories_and_relevance(cls, data: dict):
+        if not isinstance(data, dict):
+            return data
+        
+        # If lifecycle_intent is non-career or automated, ensure is_career_related is False
+        if data.get("lifecycle_intent") in ["interview_survey", "job_digest", "referral_update", "irrelevant_noise"]:
+            data["is_career_related"] = False
+            if data.get("lifecycle_intent") in ["job_digest", "referral_update", "interview_survey"]:
+                data.setdefault("primary_category", "career_automated")
+            else:
+                data.setdefault("primary_category", "non_career")
+        elif data.get("primary_category") in ["non_career", "career_automated"]:
+            data["is_career_related"] = False
+        elif data.get("primary_category") in ["career_direct", "career_outreach"]:
+            data["is_career_related"] = True
+        elif "is_career_related" in data:
+            if not data["is_career_related"]:
+                data.setdefault("primary_category", "non_career")
+            else:
+                data.setdefault("primary_category", "career_direct")
+
+        return data
 
     # Opportunity details (if career related)
     company_name: str | None = Field(default=None, description="Normalized company name, e.g. Stripe, Google")
