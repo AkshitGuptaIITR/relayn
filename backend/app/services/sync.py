@@ -1,3 +1,4 @@
+from email.utils import parseaddr
 import logging
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -57,6 +58,7 @@ class MailboxSyncService:
             mailbox.sync_error = None
             await session.commit()
             mailbox_id = mailbox.id
+            mailbox_email = (mailbox.email_address or "").strip().lower()
             last_history = mailbox.last_history_id
             generation = mailbox.generation
 
@@ -78,12 +80,20 @@ class MailboxSyncService:
                     if check_res.scalar_one_or_none():
                         continue
 
+                    # Determine direction from gateway labels or sender address match
+                    sender_addr = parseaddr(msg_data.sender)[1].strip().lower()
+                    direction = msg_data.direction
+                    if direction == "inbound" and mailbox_email and sender_addr == mailbox_email:
+                        direction = "outbound"
+
                     # Insert raw email record
                     email_msg = EmailMessage(
                         mailbox_id=mailbox_id,
                         gmail_message_id=msg_data.gmail_message_id,
                         gmail_thread_id=msg_data.gmail_thread_id,
                         history_id=msg_data.history_id,
+                        direction=direction,
+                        label_ids=msg_data.label_ids,
                         sender=msg_data.sender,
                         recipients=msg_data.recipients,
                         subject=msg_data.subject,

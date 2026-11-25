@@ -1,3 +1,4 @@
+import datetime
 import logging
 import uuid
 from sqlalchemy import select
@@ -58,6 +59,7 @@ class CareerPipelineService:
             subject = email.subject
             body = email.body_plain
             sent_at = email.sent_at
+            direction = email.direction
 
         # 1. Run structured extraction
         extracted: EmailExtractionResult = await self.llm.extract_email(
@@ -65,6 +67,7 @@ class CareerPipelineService:
             recipients=recipients,
             subject=subject,
             body_plain=body,
+            direction=direction,
         )
 
         async with async_session_factory() as session:
@@ -189,6 +192,12 @@ class CareerPipelineService:
                         break
 
             # Step F: Create new Opportunity if no existing candidacy matched
+            # Do not create a new opportunity from a routine reply if no thread/company match exists
+            if not opportunity and extracted.lifecycle_intent == "candidate_reply":
+                await session.commit()
+                logger.info("Outbound reply %s had no matching opportunity; skipping creation.", email_message_id)
+                return True
+
             is_new_opportunity = False
             role_title = extracted.role_title or "Software Engineer"
             if not opportunity:
@@ -278,11 +287,23 @@ class CareerPipelineService:
                 )
                 session.add(follow_up)
 
+            if extracted.lifecycle_intent == "candidate_outreach" and not extracted.follow_ups:
+                session.add(
+                    FollowUpTask(
+                        opportunity_id=opportunity.id,
+                        title=f"Follow up on outreach to {company.name}",
+                        description=f"Check for a reply to your outreach regarding {opportunity.role_title}.",
+                        due_date=sent_at.date() + datetime.timedelta(days=5),
+                        status="pending",
+                    )
+                )
+
             # 8. Human Review Proposal (if flagged or low confidence or missing role)
+            is_routine_reply = extracted.lifecycle_intent == "candidate_reply"
             should_review = (
                 extracted.requires_human_review
                 or extracted.confidence < 0.80
-                or extracted.role_title is None
+                or (extracted.role_title is None and not is_routine_reply)
             )
             if should_review:
                 proposal_type = (

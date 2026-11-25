@@ -12,7 +12,7 @@ from app.integrations.mailbox.gateway import IngestedMessage, SyncResult
 logger = logging.getLogger("relayn.gmail_gateway")
 
 # Production-grade software engineering career search query
-# Combines ATS domains, candidate lifecycle keywords, and excludes ecommerce/order receipts
+# Combines ATS domains, candidate lifecycle keywords, outbound outreach in Sent, and excludes ecommerce/order receipts
 SWE_CAREER_GMAIL_QUERY = (
     '('
     'from:(*@*.greenhouse-mail.io OR *@*.lever.co OR *@*.ashbyhq.com '
@@ -22,8 +22,12 @@ SWE_CAREER_GMAIL_QUERY = (
     'subject:(interview OR "application received" OR "application submitted" '
     'OR "your application" OR "next steps" OR "coding challenge" OR "technical assessment" '
     'OR "offer of employment" OR "moving forward" OR "not moving forward" '
-    'OR "let\'s connect" OR "hiring team" OR "recruiting team" OR "candidacy")'
+    'OR "let\'s connect" OR "hiring team" OR "recruiting team" OR "candidacy") '
+    'OR '
+    '(in:sent newer_than:6m (resume OR CV OR "applying for" OR "application for" '
+    'OR "software engineer" OR "reaching out" OR "interested in" OR "open role" OR "opportunity"))'
     ') '
+    '-in:drafts '
     '-subject:("order confirmation" OR "has shipped" OR "your receipt" '
     'OR "credit card" OR "statement is ready" OR "password reset")'
 )
@@ -191,11 +195,15 @@ class GmailGateway:
 
                 snippet = full_msg.get("snippet", "")
                 body_plain = self._extract_plain_text(full_msg.get("payload", {})) or snippet
+                label_ids = full_msg.get("labelIds", [])
+                direction = "outbound" if "SENT" in label_ids else "inbound"
 
                 return IngestedMessage(
                     gmail_message_id=full_msg["id"],
                     gmail_thread_id=full_msg["threadId"],
                     history_id=full_msg.get("historyId"),
+                    direction=direction,
+                    label_ids=label_ids,
                     sender=sender,
                     recipients=recipients,
                     subject=subject,

@@ -34,9 +34,11 @@ async def test_provider_uses_agent_output(monkeypatch):
         recipients=["owner@relayn.local"],
         subject="Interview scheduled",
         body_plain="Let's schedule your system design round.",
+        direction="outbound",
     )
 
     assert result is expected
+    assert "Direction: OUTBOUND" in captured["prompt"]
     assert "recruiter@stripe.com" in captured["prompt"]
 
 

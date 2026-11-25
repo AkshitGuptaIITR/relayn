@@ -11,5 +11,6 @@ class LLMProvider(Protocol):
         recipients: list[str],
         subject: str,
         body_plain: str,
+        direction: str = "inbound",
     ) -> EmailExtractionResult:
         ...

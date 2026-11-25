@@ -13,6 +13,9 @@ EmailPrimaryCategory = Literal[
 # Lifecycle communication intent (Tier 2)
 EmailLifecycleIntent = Literal[
     "application_acknowledgment",
+    "outbound_application",
+    "candidate_outreach",
+    "candidate_reply",
     "recruiter_screen_invitation",
     "screening_scheduled",
     "technical_assessment",
@@ -46,6 +49,8 @@ OpportunityStage = Literal[
 EventType = Literal[
     "application_submitted",
     "recruiter_outreach",
+    "candidate_outreach_sent",
+    "candidate_reply_sent",
     "screening_invitation",
     "screening_scheduled",
     "technical_assessment_assigned",

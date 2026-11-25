@@ -134,3 +134,77 @@ async def test_coding_contest_marketing():
     assert res.is_career_related is False
     assert res.primary_category == "career_automated"
     assert res.lifecycle_intent == "job_digest"
+
+
+@pytest.mark.asyncio
+async def test_outbound_cold_outreach_extraction():
+    provider = DeterministicFixtureProvider()
+    res = await provider.extract_email(
+        sender="me@relayn.local",
+        recipients=["Sarah Chen <sarah.chen@vercel.com>"],
+        subject="Reaching out about Software Engineer opportunities at Vercel",
+        body_plain="Hi Sarah, I am reaching out to express interest in an open Software Engineer role on your team.",
+        direction="outbound",
+    )
+    assert res.is_career_related is True
+    assert res.primary_category == "career_outreach"
+    assert res.lifecycle_intent == "candidate_outreach"
+    assert res.opportunity_type == "lead"
+    assert res.current_stage == "lead"
+    assert res.event_type == "candidate_outreach_sent"
+    assert res.company_name == "Vercel"
+    assert len(res.contacts) == 1
+    assert res.contacts[0].email == "sarah.chen@vercel.com"
+
+
+@pytest.mark.asyncio
+async def test_outbound_direct_application_extraction():
+    provider = DeterministicFixtureProvider()
+    res = await provider.extract_email(
+        sender="me@relayn.local",
+        recipients=["jobs@linear.app"],
+        subject="Applying for Staff Fullstack Engineer at Linear",
+        body_plain="Hi team, attached is my resume for the Staff Fullstack Engineer position.",
+        direction="outbound",
+    )
+    assert res.is_career_related is True
+    assert res.primary_category == "career_direct"
+    assert res.lifecycle_intent == "outbound_application"
+    assert res.opportunity_type == "application"
+    assert res.current_stage == "applied"
+    assert res.event_type == "application_submitted"
+    assert res.company_name == "Linear"
+    assert len(res.contacts) == 1
+    assert res.contacts[0].email == "jobs@linear.app"
+
+
+@pytest.mark.asyncio
+async def test_outbound_routine_reply_extraction():
+    provider = DeterministicFixtureProvider()
+    res = await provider.extract_email(
+        sender="me@relayn.local",
+        recipients=["recruiter@stripe.com"],
+        subject="Re: Interview availability with Stripe",
+        body_plain="Tuesday at 2pm works for me. Looking forward to speaking!",
+        direction="outbound",
+    )
+    assert res.is_career_related is True
+    assert res.primary_category == "career_direct"
+    assert res.lifecycle_intent == "candidate_reply"
+    assert res.current_stage is None
+    assert res.event_type == "candidate_reply_sent"
+
+
+@pytest.mark.asyncio
+async def test_outbound_non_career_extraction():
+    provider = DeterministicFixtureProvider()
+    res = await provider.extract_email(
+        sender="me@relayn.local",
+        recipients=["friend@gmail.com"],
+        subject="Dinner plans this Friday",
+        body_plain="Hey, want to grab tacos at 7pm?",
+        direction="outbound",
+    )
+    assert res.is_career_related is False
+    assert res.primary_category == "non_career"
+    assert res.lifecycle_intent == "irrelevant_noise"

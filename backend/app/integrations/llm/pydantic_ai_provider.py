@@ -22,6 +22,9 @@ Analyze the provided email and extract structured career management insights acc
 
 2. lifecycle_intent:
    - "application_acknowledgment": Confirmation that an application was submitted or received.
+   - "outbound_application": Candidate sending a direct email application (e.g., attaching resume/CV or applying for a role).
+   - "candidate_outreach": Candidate initiating 1-on-1 cold/warm outreach to a recruiter, HR, or hiring manager.
+   - "candidate_reply": Candidate replying in an existing thread (e.g., sharing availability, confirming a slot, post-interview thank you).
    - "recruiter_screen_invitation": Recruiter reaching out or inviting candidate to schedule an initial screen.
    - "screening_scheduled": Recruiter screen date/time confirmed.
    - "technical_assessment": Take-home coding challenge, online assessment (HackerRank, CodeSignal), or repo link.
@@ -56,6 +59,14 @@ Analyze the provided email and extract structured career management insights acc
 - Extract preparation notes into milestones.prep_notes.
 - Extract candidate action items (e.g. "Reply with availability", "Submit code by Sunday") into follow_ups.
 - Extract exact supporting quote into evidence_quote.
+
+### OUTBOUND EMAIL RULES (When Direction is OUTBOUND):
+- The Sender is the candidate; the Recipients are external contacts (HR, recruiter, hiring manager).
+- NEVER extract the Sender (the candidate) into contacts. Extract the relevant external Recipient(s) into contacts instead, and infer company_name/company_domain from the recipient's email domain or the email body/subject.
+- Cold/warm outreach to HR or a hiring manager: primary_category="career_outreach", lifecycle_intent="candidate_outreach", opportunity_type="lead", current_stage="lead", event_type="candidate_outreach_sent", is_career_related=true.
+- Direct email application (e.g., applying for a role with resume/CV): primary_category="career_direct", lifecycle_intent="outbound_application", opportunity_type="application", current_stage="applied", event_type="application_submitted", is_career_related=true.
+- Routine reply in an ongoing thread (e.g., confirming interview availability, answering a recruiter question): primary_category="career_direct", lifecycle_intent="candidate_reply", current_stage=null, event_type="candidate_reply_sent", is_career_related=true.
+- Personal, billing, or unrelated sent emails: primary_category="non_career", lifecycle_intent="irrelevant_noise", is_career_related=false.
 """
 
 
@@ -93,11 +104,13 @@ class PydanticAIExtractionProvider:
         recipients: list[str],
         subject: str,
         body_plain: str,
+        direction: str = "inbound",
     ) -> EmailExtractionResult:
         if not self.agent:
-            return await self.fallback.extract_email(sender, recipients, subject, body_plain)
+            return await self.fallback.extract_email(sender, recipients, subject, body_plain, direction=direction)
 
         user_content = f"""
+Direction: {direction.upper()}
 Sender: {sender}
 Recipients: {', '.join(recipients)}
 Subject: {subject}

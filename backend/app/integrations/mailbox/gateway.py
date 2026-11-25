@@ -1,4 +1,5 @@
 import datetime
+from typing import Literal
 from pydantic import BaseModel, Field
 
 
@@ -8,6 +9,8 @@ class IngestedMessage(BaseModel):
     gmail_message_id: str = Field(..., description="Unique message ID")
     gmail_thread_id: str = Field(..., description="Gmail or conversation thread ID")
     history_id: str | None = Field(default=None, description="Mailbox sync cursor / history ID")
+    direction: Literal["inbound", "outbound"] = Field(default="inbound")
+    label_ids: list[str] = Field(default_factory=list)
     sender: str
     recipients: list[str] = Field(default_factory=list)
     subject: str = ""

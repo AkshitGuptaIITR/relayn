@@ -114,3 +114,88 @@ async def test_end_to_end_pipeline_processing():
 
         follow_ups_count = (await session.execute(select(func.count(FollowUpTask.id)))).scalar()
         assert follow_ups_count > 0
+
+
+@pytest.mark.asyncio
+async def test_outbound_outreach_and_reply_pipeline():
+    from app.integrations.llm.fixtures import DeterministicFixtureProvider
+    from app.integrations.mailbox.gateway import IngestedMessage, SyncResult
+    from app.models.career import ReviewProposal
+
+    class OutboundPipelineGateway:
+        async def fetch_messages(self, after_history_id=None, limit=50):
+            base_time = datetime.datetime(2026, 11, 20, 10, 0, tzinfo=datetime.timezone.utc)
+            return SyncResult(
+                messages=[
+                    IngestedMessage(
+                        gmail_message_id="msg_outreach_1",
+                        gmail_thread_id="thread_outreach_1",
+                        history_id="3001",
+                        direction="outbound",
+                        label_ids=["SENT"],
+                        sender="demo.owner@relayn.local",
+                        recipients=["Maya Lin <maya.lin@vercel.com>"],
+                        subject="Reaching out about Staff Backend Engineer role at Vercel",
+                        sent_at=base_time,
+                        body_plain="Hi Maya, I am reaching out regarding open Staff Backend Engineer roles at Vercel.",
+                    ),
+                    IngestedMessage(
+                        gmail_message_id="msg_outreach_reply_1",
+                        gmail_thread_id="thread_outreach_1",
+                        history_id="3002",
+                        direction="outbound",
+                        label_ids=["SENT"],
+                        sender="demo.owner@relayn.local",
+                        recipients=["Maya Lin <maya.lin@vercel.com>"],
+                        subject="Re: Reaching out about Staff Backend Engineer role at Vercel",
+                        sent_at=base_time + datetime.timedelta(days=1),
+                        body_plain="Thursday at 2pm works for me. Looking forward to chatting!",
+                    ),
+                ],
+                new_history_id="3002",
+                has_more=False,
+            )
+
+    async with async_session_factory() as session:
+        await session.execute(ReviewProposal.__table__.delete())
+        await session.execute(FollowUpTask.__table__.delete())
+        await session.execute(Milestone.__table__.delete())
+        await session.execute(OpportunityEvent.__table__.delete())
+        await session.execute(Opportunity.__table__.delete())
+        await session.execute(Contact.__table__.delete())
+        await session.execute(Company.__table__.delete())
+        await session.execute(EmailMessage.__table__.delete())
+        await session.execute(MailboxAccount.__table__.delete())
+        await session.commit()
+
+    sync_service = MailboxSyncService(gateway=OutboundPipelineGateway())
+    synced = await sync_service.sync_mailbox(limit=10)
+    assert synced == 2
+
+    pipeline = CareerPipelineService(llm_provider=DeterministicFixtureProvider())
+    async with async_session_factory() as session:
+        email_ids = (await session.execute(select(EmailMessage.id).order_by(EmailMessage.sent_at.asc()))).scalars().all()
+
+    for eid in email_ids:
+        await pipeline.process_email_message(eid)
+
+    async with async_session_factory() as session:
+        opps = (await session.execute(select(Opportunity).join(Company).where(Company.name == "Vercel"))).scalars().all()
+        assert len(opps) == 1
+        assert opps[0].status == "lead"
+        assert opps[0].opportunity_type == "lead"
+
+        contacts = (await session.execute(select(Contact))).scalars().all()
+        assert len(contacts) == 1
+        assert contacts[0].email == "maya.lin@vercel.com"
+
+        events = (await session.execute(select(OpportunityEvent).where(OpportunityEvent.opportunity_id == opps[0].id))).scalars().all()
+        assert len(events) == 2
+        assert {e.event_type for e in events} == {"candidate_outreach_sent", "candidate_reply_sent"}
+
+        follow_ups = (await session.execute(select(FollowUpTask).where(FollowUpTask.opportunity_id == opps[0].id))).scalars().all()
+        assert len(follow_ups) == 1
+        assert follow_ups[0].due_date == datetime.date(2026, 11, 25)
+
+        reviews = (await session.execute(select(ReviewProposal))).scalars().all()
+        assert len(reviews) == 0

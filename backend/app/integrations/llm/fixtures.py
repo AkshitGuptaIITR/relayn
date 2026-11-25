@@ -20,7 +20,11 @@ class DeterministicFixtureProvider:
         recipients: list[str],
         subject: str,
         body_plain: str,
+        direction: str = "inbound",
     ) -> EmailExtractionResult:
+        if direction == "outbound":
+            return self._extract_outbound(recipients, subject, body_plain)
+
         sub_lower = subject.lower()
         body_lower = body_plain.lower()
 
@@ -380,11 +384,104 @@ class DeterministicFixtureProvider:
             return match.group(1).strip()
         return None
 
-    def _extract_contact(self, sender: str, body: str) -> ExtractedContact | None:
+    def _extract_contact(self, address: str, body: str) -> ExtractedContact | None:
         name_match = re.search(r"(?:Best regards|Warm regards|Sincerely|Best),\s*\n([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)", body)
-        name = name_match.group(1).strip() if name_match else sender.split("@")[0].replace(".", " ").title()
+        name = name_match.group(1).strip() if name_match else address.split("@")[0].replace(".", " ").title()
         return ExtractedContact(
             name=name,
-            email=sender,
+            email=address,
+            role="recruiter",
+        )
+
+    def _extract_outbound(
+        self,
+        recipients: list[str],
+        subject: str,
+        body_plain: str,
+    ) -> EmailExtractionResult:
+        sub_lower = subject.lower()
+        body_lower = body_plain.lower()
+        primary_recipient = recipients[0] if recipients else ""
+
+        # Check routine reply in an existing thread first
+        is_reply = sub_lower.startswith("re:") and any(
+            w in body_lower
+            for w in ["works for me", "availability", "available", "interview", "looking forward", "thank you", "thanks"]
+        )
+        if is_reply:
+            company = self._guess_company(primary_recipient, subject, body_plain)
+            contacts = [self._extract_recipient_contact(primary_recipient)] if primary_recipient else []
+            return EmailExtractionResult(
+                primary_category="career_direct",
+                lifecycle_intent="candidate_reply",
+                is_career_related=True,
+                confidence=0.92,
+                company_name=company,
+                role_title=None,
+                opportunity_type="application",
+                current_stage=None,
+                event_type="candidate_reply_sent",
+                event_summary=f"Candidate reply sent to {company}",
+                contacts=contacts,
+                evidence_quote=subject,
+            )
+
+        # Direct email application
+        if any(w in sub_lower or w in body_lower for w in ["applying for", "application for", "attached is my resume", "my resume", "my cv"]):
+            company = self._guess_company(primary_recipient, subject, body_plain)
+            role = self._guess_role(subject, body_plain)
+            contacts = [self._extract_recipient_contact(primary_recipient)] if primary_recipient else []
+            return EmailExtractionResult(
+                primary_category="career_direct",
+                lifecycle_intent="outbound_application",
+                is_career_related=True,
+                confidence=0.93,
+                company_name=company,
+                role_title=role,
+                opportunity_type="application",
+                current_stage="applied",
+                event_type="application_submitted",
+                event_summary=f"Outbound application sent for {role} at {company}",
+                contacts=contacts,
+                evidence_quote=subject,
+            )
+
+        # Cold / warm outreach to HR or hiring manager
+        outreach_keywords = ["reaching out", "interested in", "open role", "opportunity", "software engineer", "hiring", "connect"]
+        if any(w in sub_lower or w in body_lower for w in outreach_keywords):
+            company = self._guess_company(primary_recipient, subject, body_plain)
+            role = self._guess_role(subject, body_plain)
+            contacts = [self._extract_recipient_contact(primary_recipient)] if primary_recipient else []
+            return EmailExtractionResult(
+                primary_category="career_outreach",
+                lifecycle_intent="candidate_outreach",
+                is_career_related=True,
+                confidence=0.91,
+                company_name=company,
+                role_title=role,
+                opportunity_type="lead",
+                current_stage="lead",
+                event_type="candidate_outreach_sent",
+                event_summary=f"Outbound outreach sent to {company}",
+                contacts=contacts,
+                evidence_quote=subject,
+            )
+
+        return EmailExtractionResult(
+            primary_category="non_career",
+            lifecycle_intent="irrelevant_noise",
+            is_career_related=False,
+            confidence=0.95,
+            event_summary="Non-career outbound email",
+        )
+
+    def _extract_recipient_contact(self, recipient: str) -> ExtractedContact:
+        from email.utils import parseaddr
+        display_name, addr = parseaddr(recipient)
+        email_addr = addr or recipient
+        name = display_name.strip() or email_addr.split("@")[0].replace(".", " ").title()
+        return ExtractedContact(
+            name=name,
+            email=email_addr,
             role="recruiter",
         )
